@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "org.h2.twopc";
+option java_outer_classname = "TwoPCProto";
+option objc_class_prefix = "TWOPC";
+
+package twopc;
+
+// The 2pc command service definition.
+service CommandProcessor {
+  // Sends a command
+  rpc processCommand (TwoPCRequest) returns (TwoPCResponse) {}
+}
+
+// The request message with command
+message TwoPCRequest {
+  string command = 1;
+}
+
+// The response message with reply
+message TwoPCResponse {
+  string reply = 1;
+}
