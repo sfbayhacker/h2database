@@ -120,7 +120,16 @@ public class Server extends Tool implements Runnable, ShutdownHandler {
      * @param args the command line arguments
      */
     public static void main(String... args) throws SQLException {
-        new Server().runTool(args);
+      // start grpc server
+      Thread twopc = new Thread(new Runnable() {
+        @Override
+        public void run() {
+          startTwoPCServer();
+        }
+      });
+      twopc.run();
+      
+      new Server().runTool(args);
     }
 
     private void verifyArgs(String... args) throws SQLException {
@@ -761,15 +770,6 @@ public class Server extends Tool implements Runnable, ShutdownHandler {
             args = new String[] { "-webPort", "0" };
         }
 
-        //start grpc server
-        Thread twopc = new Thread(new Runnable() {
-          @Override
-          public void run() {
-            startTwoPCServer();
-          }
-        }); 
-        twopc.run();
-        
         Server web = new Server(webServer, args);
         web.start();
         Server server = new Server();
