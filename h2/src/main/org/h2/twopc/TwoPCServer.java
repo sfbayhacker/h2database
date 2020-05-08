@@ -12,7 +12,18 @@ import io.grpc.ServerBuilder;
  */
 public class TwoPCServer {
   private static final Logger logger = Logger.getLogger(TwoPCServer.class.getName());
-
+  
+  static {
+    try {
+      final TwoPCServer server = new TwoPCServer();
+      server.start();
+      server.blockUntilShutdown();
+    } catch (Exception e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+  }
+  
   private Server server;
 
   private void start() throws IOException {
