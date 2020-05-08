@@ -20,9 +20,16 @@ import io.grpc.Channel;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
+
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import org.h2.engine.Constants;
+import org.h2.message.DbException;
+import org.h2.util.SortedProperties;
+import org.h2.util.StringUtils;
 
 /**
  * A simple client that requests a greeting from the {@link HelloWorldServer}.
@@ -63,8 +70,10 @@ public class TwoPCClient {
     String command = "PREPARE";
 //    String command = "";
     // Access a service running on the local machine on port 50051
-    String target = "localhost:50051";
-
+    String target = getPeerAddresses();
+    logger.info("target: " + target);
+    if (StringUtils.isNullOrEmpty(target)) return;
+    
     // Create a communication channel to the server, known as a Channel. Channels are thread-safe
     // and reusable. It is common to create channels at the beginning of your application and reuse
     // them until the application shuts down.
@@ -81,6 +90,26 @@ public class TwoPCClient {
       // resources the channel should be shut down when it will no longer be used. If it may be used
       // again leave it running.
       channel.shutdownNow().awaitTermination(5, TimeUnit.SECONDS);
+    }
+  }
+  
+  private static String getPeerAddresses() {
+    try {
+        String serverPropertiesDir = Constants.SERVER_PROPERTIES_DIR;
+        if ("null".equals(serverPropertiesDir)) {
+            return null;
+        }
+        Properties props = SortedProperties.loadProperties(
+                serverPropertiesDir + "/" + Constants.SERVER_PROPERTIES_NAME);
+        
+        Object peers = props.get("peerAddresses");
+        
+        if (peers == null) return null;
+        
+        return peers.toString();//.split("|");
+    } catch (Exception e) {
+        DbException.traceThrowable(e);
+        return null;
     }
   }
 }
