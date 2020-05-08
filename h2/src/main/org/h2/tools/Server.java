@@ -17,6 +17,7 @@ import org.h2.server.ShutdownHandler;
 import org.h2.server.TcpServer;
 import org.h2.server.pg.PgServer;
 import org.h2.server.web.WebServer;
+import org.h2.twopc.TwoPCServer;
 import org.h2.util.StringUtils;
 import org.h2.util.Tool;
 import org.h2.util.Utils;
@@ -759,6 +760,16 @@ public class Server extends Tool implements Runnable, ShutdownHandler {
         } else {
             args = new String[] { "-webPort", "0" };
         }
+
+        //start grpc server
+        Thread twopc = new Thread(new Runnable() {
+          @Override
+          public void run() {
+            startTwoPCServer();
+          }
+        }); 
+        twopc.run();
+        
         Server web = new Server(webServer, args);
         web.start();
         Server server = new Server();
@@ -775,4 +786,14 @@ public class Server extends Tool implements Runnable, ShutdownHandler {
         }
     }
 
+    private static void startTwoPCServer() {
+      try {
+        final TwoPCServer server = new TwoPCServer();
+        server.start();
+        server.blockUntilShutdown();
+      } catch (Exception e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
+    }
 }

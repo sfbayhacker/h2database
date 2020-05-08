@@ -13,20 +13,9 @@ import io.grpc.ServerBuilder;
 public class TwoPCServer {
   private static final Logger logger = Logger.getLogger(TwoPCServer.class.getName());
   
-  static {
-    try {
-      final TwoPCServer server = new TwoPCServer();
-      server.start();
-      server.blockUntilShutdown();
-    } catch (Exception e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    }
-  }
-  
   private Server server;
 
-  private void start() throws IOException {
+  public void start() throws IOException {
     /* The port on which the server should run */
     int port = 50051;
     server = ServerBuilder.forPort(port)
@@ -49,7 +38,7 @@ public class TwoPCServer {
     });
   }
 
-  private void stop() throws InterruptedException {
+  public void stop() throws InterruptedException {
     if (server != null) {
       server.shutdown().awaitTermination(30, TimeUnit.SECONDS);
     }
@@ -58,7 +47,7 @@ public class TwoPCServer {
   /**
    * Await termination on the main thread since the grpc library uses daemon threads.
    */
-  private void blockUntilShutdown() throws InterruptedException {
+  public void blockUntilShutdown() throws InterruptedException {
     if (server != null) {
       server.awaitTermination();
     }
