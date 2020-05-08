@@ -121,13 +121,12 @@ public class Server extends Tool implements Runnable, ShutdownHandler {
      */
     public static void main(String... args) throws SQLException {
       // start grpc server
-      Thread twopc = new Thread(new Runnable() {
+      new Thread(new Runnable() {
         @Override
         public void run() {
           startTwoPCServer();
         }
-      });
-      twopc.run();
+      }).start();;
       
       new Server().runTool(args);
     }
