@@ -29,6 +29,7 @@ public class TwoPCCoordinator {
   
   private TwoPCCoordinator() {
     this.cohorts = getPeerAddresses();
+//    this.cohorts = new String[] {"10.1.10.181:50051"};
   }
   
   public static TwoPCCoordinator getInstance() {
@@ -106,7 +107,8 @@ public class TwoPCCoordinator {
       // ManagedChannels use resources like threads and TCP connections. To prevent leaking these
       // resources the channel should be shut down when it will no longer be used. If it may be used
       // again leave it running.
-      channel.shutdownNow().awaitTermination(5, TimeUnit.SECONDS);
+      //TODO: clean up code to be moved to appropriate place
+//      channel.shutdownNow().awaitTermination(5, TimeUnit.SECONDS);
     }
   }
   
@@ -125,7 +127,7 @@ public class TwoPCCoordinator {
         
         if (peers == null) return null;
         
-        return peers.toString().split("|");
+        return peers.toString().split("\\|");
     } catch (Exception e) {
         DbException.traceThrowable(e);
         return null;
@@ -152,6 +154,7 @@ public class TwoPCCoordinator {
     
     @Override
     public String call() throws Exception {
+      System.out.println("Calling..");
       return client.process(command, tid, data);
     }
     
