@@ -13,6 +13,8 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
     TwoPCResponse.Builder response = TwoPCResponse.newBuilder();
     
     if ("prepare".equalsIgnoreCase(command)) {
+      System.out.println("TID           : " + request.getTid());
+      System.out.println("Received data : " + request.getData().toString());
       response.setReply("OK");
     } else {
       response.setReply("ABORT");

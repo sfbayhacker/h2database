@@ -18,4 +18,22 @@ public interface TwoPCRequestOrBuilder extends
    */
   com.google.protobuf.ByteString
       getCommandBytes();
+
+  /**
+   * <code>string tid = 2;</code>
+   * @return The tid.
+   */
+  java.lang.String getTid();
+  /**
+   * <code>string tid = 2;</code>
+   * @return The bytes for tid.
+   */
+  com.google.protobuf.ByteString
+      getTidBytes();
+
+  /**
+   * <code>bytes data = 3;</code>
+   * @return The data.
+   */
+  com.google.protobuf.ByteString getData();
 }

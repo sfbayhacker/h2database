@@ -16,27 +16,15 @@
 
 package org.h2.twopc;
 
+import com.google.protobuf.ByteString;
+
 import io.grpc.Channel;
-import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
-
-import java.util.Properties;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import org.h2.engine.Constants;
-import org.h2.message.DbException;
-import org.h2.util.SortedProperties;
-import org.h2.util.StringUtils;
 
 /**
  * A simple client that requests a greeting from the {@link HelloWorldServer}.
  */
 public class TwoPCClient {
-  private static final Logger logger = Logger.getLogger(TwoPCClient.class.getName());
-
   private final CommandProcessorGrpc.CommandProcessorBlockingStub blockingStub;
 
   /** Construct client for accessing HelloWorld server using the existing channel. */
@@ -49,67 +37,24 @@ public class TwoPCClient {
   }
 
   /** send command to server. */
-  public void process(String command) {
-    logger.info("Sending command - " + command);
-    TwoPCRequest request = TwoPCRequest.newBuilder().setCommand(command).build();
+  public String process(String command, String tid, ByteString data) {
+    System.out.println("Sending command - " + command);
+    TwoPCRequest.Builder requestBuilder = TwoPCRequest.newBuilder().setCommand(command).setTid(tid);
+    
+    if ("prepare".equalsIgnoreCase(command)) {
+      requestBuilder = requestBuilder.setData(data);
+    }
+    
+    TwoPCRequest request = requestBuilder.build();
+    
     TwoPCResponse response;
     try {
       response = blockingStub.processCommand(request);
     } catch (StatusRuntimeException e) {
-      logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
-      return;
+      System.err.println("RPC failed: " + e.getStatus());
+      return null;
     }
-    logger.info("Reply: " + response.getReply());
-  }
-
-  /**
-   * Greet server. If provided, the first element of {@code args} is the name to use in the
-   * greeting. The second argument is the target server.
-   */
-  public static void main(String[] args) throws Exception {
-    String command = "PREPARE";
-//    String command = "";
-    // Access a service running on the local machine on port 50051
-    String target = getPeerAddresses();
-    logger.info("target: " + target);
-    if (StringUtils.isNullOrEmpty(target)) return;
-    
-    // Create a communication channel to the server, known as a Channel. Channels are thread-safe
-    // and reusable. It is common to create channels at the beginning of your application and reuse
-    // them until the application shuts down.
-    ManagedChannel channel = ManagedChannelBuilder.forTarget(target)
-        // Channels are secure by default (via SSL/TLS). For the example we disable TLS to avoid
-        // needing certificates.
-        .usePlaintext()
-        .build();
-    try {
-      TwoPCClient client = new TwoPCClient(channel);
-      client.process(command);
-    } finally {
-      // ManagedChannels use resources like threads and TCP connections. To prevent leaking these
-      // resources the channel should be shut down when it will no longer be used. If it may be used
-      // again leave it running.
-      channel.shutdownNow().awaitTermination(5, TimeUnit.SECONDS);
-    }
-  }
-  
-  private static String getPeerAddresses() {
-    try {
-        String serverPropertiesDir = Constants.SERVER_PROPERTIES_DIR;
-        if ("null".equals(serverPropertiesDir)) {
-            return null;
-        }
-        Properties props = SortedProperties.loadProperties(
-                serverPropertiesDir + "/" + Constants.SERVER_PROPERTIES_NAME);
-        
-        Object peers = props.get("peerAddresses");
-        
-        if (peers == null) return null;
-        
-        return peers.toString();//.split("|");
-    } catch (Exception e) {
-        DbException.traceThrowable(e);
-        return null;
-    }
+    System.out.println("Reply: " + response.getReply());
+    return response.getReply();
   }
 }

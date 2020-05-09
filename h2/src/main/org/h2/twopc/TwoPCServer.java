@@ -2,7 +2,6 @@ package org.h2.twopc;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
@@ -11,8 +10,6 @@ import io.grpc.ServerBuilder;
  * Server that manages startup/shutdown of a {@code Greeter} server.
  */
 public class TwoPCServer {
-  private static final Logger logger = Logger.getLogger(TwoPCServer.class.getName());
-  
   private Server server;
 
   public void start() throws IOException {
@@ -22,7 +19,7 @@ public class TwoPCServer {
         .addService(new CommandProcessor())
         .build()
         .start();
-    logger.info("Server started, listening on " + port);
+    System.out.println("Server started, listening on " + port);
     Runtime.getRuntime().addShutdownHook(new Thread() {
       @Override
       public void run() {
