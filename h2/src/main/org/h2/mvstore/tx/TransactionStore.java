@@ -26,6 +26,7 @@ import org.h2.mvstore.type.DataType;
 import org.h2.mvstore.type.LongDataType;
 import org.h2.mvstore.type.ObjectDataType;
 import org.h2.mvstore.type.StringDataType;
+import org.h2.twopc.TwoPCCoordinator;
 import org.h2.util.StringUtils;
 import org.h2.value.VersionedValue;
 
@@ -370,11 +371,18 @@ public class TransactionStore {
      */
     public Transaction begin(RollbackListener listener, int timeoutMillis, int ownerId,
             IsolationLevel isolationLevel) {
-        Transaction transaction = registerTransaction(0, Transaction.STATUS_OPEN, null, 0,
+        return begin(listener, 0, timeoutMillis, ownerId, isolationLevel);
+    }
+
+    //CS244b - new method that takes in a txId - to support starting a txn based on coordinator
+    //txn id
+    public Transaction begin(RollbackListener listener, int txId, int timeoutMillis, int ownerId,
+        IsolationLevel isolationLevel) {
+        Transaction transaction = registerTransaction(txId, Transaction.STATUS_OPEN, null, 0,
                 timeoutMillis, ownerId, isolationLevel, listener);
         return transaction;
     }
-
+    
     private Transaction registerTransaction(int txId, int status, String name, long logId,
                                             int timeoutMillis, int ownerId,
                                             IsolationLevel isolationLevel, RollbackListener listener) {
@@ -402,7 +410,9 @@ public class TransactionStore {
             success = openTransactions.compareAndSet(original, clone);
         } while(!success);
 
-        Transaction transaction = new Transaction(this, transactionId, sequenceNo, status, name, logId,
+        //CS244b TODO: to improve
+        long globalTxId = System.nanoTime()*10 + Long.valueOf(TwoPCCoordinator.getInstance().getHostId());
+        Transaction transaction = new Transaction(this, transactionId, globalTxId, sequenceNo, status, name, logId,
                 timeoutMillis, ownerId, isolationLevel, listener);
 
         assert transactions.get(transactionId) == null;
@@ -684,6 +694,16 @@ public class TransactionStore {
         return transactions.get(transactionId);
     }
 
+    //CS244b - get transaction given global id
+    Transaction getTransaction(long globalTxId) {
+      for(int i=0; i<transactions.length(); i++) {
+        Transaction t = transactions.get(i);
+        if (t.getGlobalId() == globalTxId) return t; 
+      }
+      
+      return null;
+    }
+    
     /**
      * Rollback to an old savepoint.
      *

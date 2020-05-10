@@ -22,27 +22,27 @@ import io.grpc.ManagedChannelBuilder;
 public class TwoPCCoordinator {
   
   private String[] cohorts;
+  private String hostId;
   
   private static class InstanceHolder {
     private static TwoPCCoordinator INSTANCE = new TwoPCCoordinator();
   }
   
   private TwoPCCoordinator() {
-    this.cohorts = getPeerAddresses();
+    readProperties();
 //    this.cohorts = new String[] {"10.1.10.181:50051"};
+//    this.hostId = "1";
   }
   
   public static TwoPCCoordinator getInstance() {
     return InstanceHolder.INSTANCE;
   }
   
-  public boolean prepare(String tid, ByteString data) throws InterruptedException, ExecutionException {
-    if (cohorts == null) {
-      System.err.println();
+  public boolean sendMessage(final String tid, final String command, final byte[] data) throws InterruptedException, ExecutionException {
+    if (tid == null || command == null || cohorts == null) {
+      System.err.println(String.format("Unable to send message: {%s, %s, %s}", tid, command, data.toString()));
       return false;
     }
-    
-    String command = "PREPARE";
 
     ExecutorService executors = Executors.newFixedThreadPool(cohorts.length);
     List<Future<String>> results = new ArrayList<>(cohorts.length);
@@ -50,7 +50,7 @@ public class TwoPCCoordinator {
     for(String cohort: cohorts) {
       System.out.println("cohort: " + cohort);
       TwoPCClient client = buildClient(cohort);
-      Future<String> result = executors.submit(new CommandRunner(client, command, tid, data));
+      Future<String> result = executors.submit(new CommandRunner(client, command, tid, ByteString.copyFrom(data)));
       results.add(result);
     }
     
@@ -107,35 +107,38 @@ public class TwoPCCoordinator {
       // ManagedChannels use resources like threads and TCP connections. To prevent leaking these
       // resources the channel should be shut down when it will no longer be used. If it may be used
       // again leave it running.
-      //TODO: clean up code to be moved to appropriate place
+      //CS244b TODO: clean up code to be moved to appropriate place
 //      channel.shutdownNow().awaitTermination(5, TimeUnit.SECONDS);
     }
   }
   
-  //TODO: make return array; change logic in main to use executor service to send messages and wait for all calls
-  //to succeed and return true; if any one fails or times out, the method should false
-  private String[] getPeerAddresses() {
+  private void readProperties() {
     try {
         String serverPropertiesDir = Constants.SERVER_PROPERTIES_DIR;
         if ("null".equals(serverPropertiesDir)) {
-            return null;
+            return;
         }
+        
         Properties props = SortedProperties.loadProperties(
                 serverPropertiesDir + "/" + Constants.SERVER_PROPERTIES_NAME);
         
+        hostId = props.get("hostId").toString();
+        
         Object peers = props.get("peerAddresses");
-        
-        if (peers == null) return null;
-        
-        return peers.toString().split("\\|");
+        if (peers != null) {
+          cohorts = peers.toString().split("\\|");
+        }
     } catch (Exception e) {
         DbException.traceThrowable(e);
-        return null;
     }
   }
   
   public String[] getCohorts() {
     return cohorts;
+  }
+  
+  public String getHostId() {
+    return hostId;
   }
   
   private class CommandRunner implements Callable<String> {
@@ -165,6 +168,6 @@ public class TwoPCCoordinator {
    * greeting. The second argument is the target server.
    */
   public static void main(String[] args) throws Exception {
-    TwoPCCoordinator.getInstance().prepare("001", ByteString.copyFromUtf8("key=value"));
+    TwoPCCoordinator.getInstance().sendMessage("001", "PREPARE", TwoPCUtils.serialize("key=value"));
   }
 }

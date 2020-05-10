@@ -16,6 +16,7 @@ service CommandProcessor {
 // The request message with command
 message TwoPCRequest {
   string command = 1;
+  //TODO: change tid to long
   string tid = 2;
   bytes data = 3;
 }

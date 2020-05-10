@@ -5,11 +5,14 @@
  */
 package org.h2.mvstore.tx;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 import org.h2.engine.IsolationLevel;
 import org.h2.mvstore.DataUtils;
@@ -17,6 +20,9 @@ import org.h2.mvstore.MVMap;
 import org.h2.mvstore.MVStore;
 import org.h2.mvstore.RootReference;
 import org.h2.mvstore.type.DataType;
+import org.h2.twopc.TwoPCCoordinator;
+import org.h2.twopc.TwoPCUtils;
+import org.h2.util.IOUtils;
 import org.h2.value.VersionedValue;
 
 /**
@@ -98,6 +104,9 @@ public final class Transaction {
      */
     final int transactionId;
 
+    //cs244b - global transaction id
+    final long globalTxId;
+    
     /**
      * This is really a transaction identity, because it's not re-used.
      */
@@ -176,11 +185,12 @@ public final class Transaction {
     final IsolationLevel isolationLevel;
 
 
-    Transaction(TransactionStore store, int transactionId, long sequenceNum, int status,
+    Transaction(TransactionStore store, int transactionId, long globalTxId, long sequenceNum, int status,
                 String name, long logId, int timeoutMillis, int ownerId,
                 IsolationLevel isolationLevel, TransactionStore.RollbackListener listener) {
         this.store = store;
         this.transactionId = transactionId;
+        this.globalTxId = globalTxId;
         this.sequenceNum = sequenceNum;
         this.statusAndLogId = new AtomicLong(composeState(status, logId, false));
         this.name = name;
@@ -194,6 +204,10 @@ public final class Transaction {
         return transactionId;
     }
 
+    public long getGlobalId() {
+        return globalTxId;
+    }
+    
     public long getSequenceNum() {
         return sequenceNum;
     }
@@ -406,6 +420,26 @@ public final class Transaction {
         }
         int currentStatus = getStatus(currentState);
         checkOpen(currentStatus);
+        
+        //CS244b TODO: send log calls to peers
+        boolean result;
+        try {
+          result = TwoPCCoordinator.getInstance()
+              .sendMessage(String.valueOf(globalTxId), "log", TwoPCUtils.serialize(logRecord));
+        } catch (InterruptedException | ExecutionException | IOException e) {
+          // TODO Auto-generated catch block
+          System.err.println("Failure sending log message: " + e.getMessage());
+          e.printStackTrace();
+          result = false;
+        }
+        
+        if (!result) {
+          throw DataUtils.newMVStoreException(
+              DataUtils.ERROR_TWO_PC,
+              "Transaction {0}: log call returned false",
+              globalTxId);
+        }
+        
         long undoKey = store.addUndoLogRecord(transactionId, logId, logRecord);
         return undoKey;
     }
@@ -424,6 +458,9 @@ public final class Transaction {
         }
         int currentStatus = getStatus(currentState);
         checkOpen(currentStatus);
+        
+        //CS244b TODO: send log undo calls to peers
+        
         store.removeUndoLogRecord(transactionId);
     }
 

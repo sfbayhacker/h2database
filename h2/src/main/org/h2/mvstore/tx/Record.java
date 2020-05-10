@@ -19,7 +19,8 @@ import java.nio.ByteBuffer;
  *
  * @author <a href='mailto:andrei.tokar@gmail.com'>Andrei Tokar</a>
  */
-final class Record<K,V> {
+//CS244b TODO: made public temporarily
+public final class Record<K,V> {
 
     // -1 is a bogus map id
     static final Record<?,?> COMMIT_MARKER = new Record<>(-1, null, null);

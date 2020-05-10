@@ -113,6 +113,9 @@ public final class DataUtils {
      */
     public static final int ERROR_UNKNOWN_DATA_TYPE = 106;
 
+    //CS244b -- generic code for 2pc error
+    public static final int ERROR_TWO_PC = 200;
+    
     /**
      * The type for leaf page.
      */
