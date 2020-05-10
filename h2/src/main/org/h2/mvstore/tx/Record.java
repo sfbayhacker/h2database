@@ -11,6 +11,8 @@ import org.h2.mvstore.MVMap;
 import org.h2.mvstore.WriteBuffer;
 import org.h2.mvstore.type.BasicDataType;
 import org.h2.value.VersionedValue;
+
+import java.io.Serializable;
 import java.nio.ByteBuffer;
 
 /**
@@ -20,7 +22,10 @@ import java.nio.ByteBuffer;
  * @author <a href='mailto:andrei.tokar@gmail.com'>Andrei Tokar</a>
  */
 //CS244b TODO: made public temporarily
-public final class Record<K,V> {
+public final class Record<K,V> implements Serializable {
+
+    //CS244b - made class serializable to be able send as message over grpc
+    private static final long serialVersionUID = 7194961227973657720L;
 
     // -1 is a bogus map id
     static final Record<?,?> COMMIT_MARKER = new Record<>(-1, null, null);

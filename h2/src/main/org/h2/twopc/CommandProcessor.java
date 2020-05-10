@@ -14,7 +14,7 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
 
     String command = request.getCommand();
     
-    System.out.println("Command        : " + command);
+    System.out.println("Command       : " + command);
     
     TwoPCResponse.Builder response = TwoPCResponse.newBuilder();
     
