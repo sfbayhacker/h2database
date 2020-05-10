@@ -24,6 +24,7 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
       System.out.println("Received data : " + request.getData());
       try {
         Record<?,?> logRecord = (Record<?, ?>)TwoPCUtils.deserialize(request.getData().toByteArray());
+        System.out.println("Record        : " + logRecord);
       } catch (ClassNotFoundException | IOException e) {
         // TODO Auto-generated catch block
         System.err.println("Unable to de-serialize log record: " + e.getMessage());
