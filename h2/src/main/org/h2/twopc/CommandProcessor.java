@@ -1,10 +1,5 @@
 package org.h2.twopc;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-
-import javax.xml.bind.JAXBException;
-
 import org.h2.mvstore.tx.Record;
 
 import io.grpc.stub.StreamObserver;

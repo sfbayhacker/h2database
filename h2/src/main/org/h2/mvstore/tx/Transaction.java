@@ -5,9 +5,7 @@
  */
 package org.h2.mvstore.tx;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -15,8 +13,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
-
-import javax.xml.bind.JAXBException;
 
 import org.h2.engine.IsolationLevel;
 import org.h2.mvstore.DataUtils;
@@ -26,7 +22,6 @@ import org.h2.mvstore.RootReference;
 import org.h2.mvstore.type.DataType;
 import org.h2.twopc.TwoPCCoordinator;
 import org.h2.twopc.TwoPCUtils;
-import org.h2.util.IOUtils;
 import org.h2.value.VersionedValue;
 
 /**
