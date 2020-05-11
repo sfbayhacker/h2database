@@ -14,6 +14,9 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
+
+import javax.xml.bind.JAXBException;
+
 import org.h2.engine.IsolationLevel;
 import org.h2.mvstore.DataUtils;
 import org.h2.mvstore.MVMap;
@@ -426,11 +429,19 @@ public final class Transaction {
         try {
           result = TwoPCCoordinator.getInstance()
               .sendMessage(String.valueOf(globalTxId), "log", TwoPCUtils.serialize(logRecord));
+          
+          String xml = TwoPCUtils.toXML(logRecord, logRecord.getClass());
+          System.out.println("xml: " + xml);
+          Object o = TwoPCUtils.fromXML(xml, logRecord.getClass());
+          System.out.println("o: " + o);
         } catch (InterruptedException | ExecutionException | IOException e) {
           // TODO Auto-generated catch block
           System.err.println("Failure sending log message: " + e.getMessage());
           e.printStackTrace();
           result = false;
+        } catch (JAXBException e) {
+          // TODO Auto-generated catch block
+          e.printStackTrace();
         }
         
         if (!result) {
