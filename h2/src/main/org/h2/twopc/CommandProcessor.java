@@ -29,10 +29,10 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
         if (!request.getData().isEmpty()) {
 //          String xml = new String(request.getData().toByteArray(), "UTF-8");
 //          Record logRecord = TwoPCUtils.fromXML(xml, Record.class);
-          Record<?,?> logRecord = (Record<?, ?>)TwoPCUtils.deserialize();
+          Record<?,?> logRecord = (Record<?, ?>)TwoPCUtils.deserialize(request.getData().toByteArray());
           System.out.println("Record        : " + logRecord);
         }
-      } catch (JAXBException | UnsupportedEncodingException e) {
+      } catch (Exception e) {
         // TODO Auto-generated catch block
         System.err.println("Unable to de-serialize log record: " + e.getMessage());
         e.printStackTrace();
