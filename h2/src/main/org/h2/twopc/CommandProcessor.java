@@ -27,9 +27,9 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
     case "log":
       try {
         if (!request.getData().isEmpty()) {
-          String xml = new String(request.getData().toByteArray(), "UTF-8");
-          Record logRecord = TwoPCUtils.fromXML(xml, Record.class);
-  //        Record<?,?> logRecord = (Record<?, ?>)TwoPCUtils.deserialize();
+//          String xml = new String(request.getData().toByteArray(), "UTF-8");
+//          Record logRecord = TwoPCUtils.fromXML(xml, Record.class);
+          Record<?,?> logRecord = (Record<?, ?>)TwoPCUtils.deserialize();
           System.out.println("Record        : " + logRecord);
         }
       } catch (JAXBException | UnsupportedEncodingException e) {
