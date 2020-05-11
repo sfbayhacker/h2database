@@ -60,7 +60,7 @@ public class TwoPCCoordinator {
     executors.awaitTermination(200, TimeUnit.MILLISECONDS);
     
     for(Future<String> result: results) {
-      if (!result.isDone() || !"COMMIT-VOTE".equalsIgnoreCase(result.get())) {
+      if (!result.isDone() || !"OK".equalsIgnoreCase(result.get())) {
         return false;
       }
     }

@@ -20,11 +20,11 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
     System.out.println("Command       : " + command);
     
     TwoPCResponse.Builder response = TwoPCResponse.newBuilder();
+    System.out.println("TID           : " + request.getTid());
+    System.out.println("Received data : " + request.getData());
     
     switch (command.toLowerCase()) {
     case "log":
-      System.out.println("TID           : " + request.getTid());
-      System.out.println("Received data : " + request.getData());
       try {
         if (!request.getData().isEmpty()) {
           String xml = new String(request.getData().toByteArray(), "UTF-8");
@@ -40,8 +40,6 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
       response.setReply("OK");      
       break;
     case "prepare":
-      System.out.println("TID           : " + request.getTid());
-      System.out.println("Received data : " + request.getData());
       response.setReply("OK");
       break;
     default:

@@ -41,9 +41,7 @@ public class TwoPCClient {
     System.out.println("Sending command - " + command);
     TwoPCRequest.Builder requestBuilder = TwoPCRequest.newBuilder().setCommand(command).setTid(tid);
     
-    if ("prepare".equalsIgnoreCase(command)) {
-      requestBuilder = requestBuilder.setData(data);
-    }
+    requestBuilder = requestBuilder.setData(data);
     
     TwoPCRequest request = requestBuilder.build();
     

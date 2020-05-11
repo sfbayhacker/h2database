@@ -431,7 +431,7 @@ public final class Transaction {
           System.out.println("record class: " + logRecord.getClass());
           String xml = TwoPCUtils.toXML(logRecord, logRecord.getClass());
           System.out.println("xml: " + xml);
-          result = TwoPCCoordinator.getInstance()
+	  result = TwoPCCoordinator.getInstance()
               .sendMessage(String.valueOf(globalTxId), "log", xml.getBytes(StandardCharsets.UTF_8));
         } catch (InterruptedException | ExecutionException e) {
           // TODO Auto-generated catch block
