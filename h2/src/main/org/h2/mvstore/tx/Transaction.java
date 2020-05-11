@@ -7,6 +7,7 @@ package org.h2.mvstore.tx;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -425,13 +426,13 @@ public final class Transaction {
         checkOpen(currentStatus);
         
         //CS244b TODO: send log calls to peers
-        boolean result;
+        boolean result = false;
         try {
           System.out.println("record class: " + logRecord.getClass());
           String xml = TwoPCUtils.toXML(logRecord, logRecord.getClass());
           System.out.println("xml: " + xml);
           result = TwoPCCoordinator.getInstance()
-              .sendMessage(String.valueOf(globalTxId), "log", xml.getBytes());
+              .sendMessage(String.valueOf(globalTxId), "log", xml.getBytes(StandardCharsets.UTF_8));
         } catch (InterruptedException | ExecutionException e) {
           // TODO Auto-generated catch block
           System.err.println("Failure sending log message: " + e.getMessage());

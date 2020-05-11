@@ -1,6 +1,7 @@
 package org.h2.twopc;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 
 import javax.xml.bind.JAXBException;
 
@@ -25,11 +26,13 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
       System.out.println("TID           : " + request.getTid());
       System.out.println("Received data : " + request.getData());
       try {
-        String xml = new String(request.getData().toByteArray());
-        Record logRecord = TwoPCUtils.fromXML(xml, Record.class);
-//        Record<?,?> logRecord = (Record<?, ?>)TwoPCUtils.deserialize();
-        System.out.println("Record        : " + logRecord);
-      } catch (JAXBException e) {
+        if (!request.getData().isEmpty()) {
+          String xml = new String(request.getData().toByteArray(), "UTF-8");
+          Record logRecord = TwoPCUtils.fromXML(xml, Record.class);
+  //        Record<?,?> logRecord = (Record<?, ?>)TwoPCUtils.deserialize();
+          System.out.println("Record        : " + logRecord);
+        }
+      } catch (JAXBException | UnsupportedEncodingException e) {
         // TODO Auto-generated catch block
         System.err.println("Unable to de-serialize log record: " + e.getMessage());
         e.printStackTrace();

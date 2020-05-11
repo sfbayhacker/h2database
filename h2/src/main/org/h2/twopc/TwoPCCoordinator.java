@@ -29,9 +29,9 @@ public class TwoPCCoordinator {
   }
   
   private TwoPCCoordinator() {
-    readProperties();
-//    this.cohorts = new String[] {"10.1.10.181:50051"};
-//    this.hostId = "1";
+//    readProperties();
+    this.cohorts = new String[] {"10.1.10.181:50051"};
+    this.hostId = "1";
   }
   
   public static TwoPCCoordinator getInstance() {
@@ -39,6 +39,7 @@ public class TwoPCCoordinator {
   }
   
   public boolean sendMessage(final String tid, final String command, final byte[] data) throws InterruptedException, ExecutionException {
+    System.out.println(String.format("sendMessage: {%s, %s, %s}", tid, command, data));
     if (tid == null || command == null || cohorts == null) {
       System.err.println(String.format("Unable to send message: {%s, %s, %s}", tid, command, data.toString()));
       return false;
@@ -50,7 +51,9 @@ public class TwoPCCoordinator {
     for(String cohort: cohorts) {
       System.out.println("cohort: " + cohort);
       TwoPCClient client = buildClient(cohort);
-      Future<String> result = executors.submit(new CommandRunner(client, command, tid, ByteString.copyFrom(data)));
+      ByteString b = ByteString.copyFrom(data);
+      System.out.println("bytestring: " + b);
+      Future<String> result = executors.submit(new CommandRunner(client, command, tid, b));
       results.add(result);
     }
     

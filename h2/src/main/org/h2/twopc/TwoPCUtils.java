@@ -45,6 +45,7 @@ public class TwoPCUtils {
   public static <T> String toXML(Object o, Class<T> clazz) throws JAXBException {
     JAXBContext jaxbContext = JAXBContext.newInstance(clazz);
     Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
+    jaxbMarshaller.setProperty(Marshaller.JAXB_ENCODING, "UTF-8");
     jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE); // To format XML
     StringWriter out = new StringWriter();
     jaxbMarshaller.marshal(o, out);
@@ -54,6 +55,7 @@ public class TwoPCUtils {
   public static <T> T fromXML(String xml, Class<T> clazz) throws JAXBException {
     JAXBContext jc = JAXBContext.newInstance(clazz);
     Unmarshaller unmarshaller = jc.createUnmarshaller();
+    unmarshaller.setProperty(Marshaller.JAXB_ENCODING, "UTF-8");
     T obj = clazz.cast(unmarshaller.unmarshal(new StringReader(xml)));
     return obj;
   }
