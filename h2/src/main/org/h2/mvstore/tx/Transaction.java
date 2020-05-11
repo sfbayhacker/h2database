@@ -427,14 +427,12 @@ public final class Transaction {
         //CS244b TODO: send log calls to peers
         boolean result;
         try {
-          result = TwoPCCoordinator.getInstance()
-              .sendMessage(String.valueOf(globalTxId), "log", TwoPCUtils.serialize(logRecord));
-          
+          System.out.println("record class: " + logRecord.getClass());
           String xml = TwoPCUtils.toXML(logRecord, logRecord.getClass());
           System.out.println("xml: " + xml);
-          Object o = TwoPCUtils.fromXML(xml, logRecord.getClass());
-          System.out.println("o: " + o);
-        } catch (InterruptedException | ExecutionException | IOException e) {
+          result = TwoPCCoordinator.getInstance()
+              .sendMessage(String.valueOf(globalTxId), "log", xml.getBytes());
+        } catch (InterruptedException | ExecutionException e) {
           // TODO Auto-generated catch block
           System.err.println("Failure sending log message: " + e.getMessage());
           e.printStackTrace();

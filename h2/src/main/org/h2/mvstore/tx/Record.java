@@ -5,15 +5,19 @@
  */
 package org.h2.mvstore.tx;
 
+import java.io.Serializable;
+import java.nio.ByteBuffer;
+
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlRootElement;
+
 import org.h2.engine.Constants;
 import org.h2.mvstore.DataUtils;
 import org.h2.mvstore.MVMap;
 import org.h2.mvstore.WriteBuffer;
 import org.h2.mvstore.type.BasicDataType;
 import org.h2.value.VersionedValue;
-
-import java.io.Serializable;
-import java.nio.ByteBuffer;
 
 /**
  * Class Record is a value for undoLog.
@@ -22,6 +26,8 @@ import java.nio.ByteBuffer;
  * @author <a href='mailto:andrei.tokar@gmail.com'>Andrei Tokar</a>
  */
 //CS244b TODO: made public temporarily
+@XmlRootElement(name = "record")
+@XmlAccessorType(XmlAccessType.FIELD)
 public final class Record<K,V> implements Serializable {
 
     //CS244b - made class serializable to be able send as message over grpc
@@ -46,6 +52,12 @@ public final class Record<K,V> implements Serializable {
      */
     final VersionedValue<V> oldValue;
 
+    Record() {
+      this.mapId = -1;
+      this.key = null;
+      this.oldValue = null;
+    }
+    
     Record(int mapId, K key, VersionedValue<V> oldValue) {
         this.mapId = mapId;
         this.key = key;

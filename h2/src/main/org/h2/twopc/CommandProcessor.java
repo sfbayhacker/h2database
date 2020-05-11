@@ -2,6 +2,8 @@ package org.h2.twopc;
 
 import java.io.IOException;
 
+import javax.xml.bind.JAXBException;
+
 import org.h2.mvstore.tx.Record;
 
 import io.grpc.stub.StreamObserver;
@@ -23,9 +25,11 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
       System.out.println("TID           : " + request.getTid());
       System.out.println("Received data : " + request.getData());
       try {
-        Record<?,?> logRecord = (Record<?, ?>)TwoPCUtils.deserialize(request.getData().toByteArray());
+        String xml = new String(request.getData().toByteArray());
+        Record logRecord = TwoPCUtils.fromXML(xml, Record.class);
+//        Record<?,?> logRecord = (Record<?, ?>)TwoPCUtils.deserialize();
         System.out.println("Record        : " + logRecord);
-      } catch (ClassNotFoundException | IOException e) {
+      } catch (JAXBException e) {
         // TODO Auto-generated catch block
         System.err.println("Unable to de-serialize log record: " + e.getMessage());
         e.printStackTrace();
