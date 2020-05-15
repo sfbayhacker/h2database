@@ -327,6 +327,11 @@ public class Engine implements SessionFactory {
         }
     }
 
+    //cs244b
+    public Database getDatabase(String name) {
+    	return DATABASES.get(name);
+    }
+    
     /**
      * This method is called after validating user name and password. If user
      * name and password were correct, the sleep time is reset, otherwise this

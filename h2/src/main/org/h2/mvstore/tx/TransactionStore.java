@@ -362,6 +362,12 @@ public class TransactionStore {
         return begin(ROLLBACK_LISTENER_NONE, timeoutMillis, 0, IsolationLevel.READ_COMMITTED);
     }
 
+    //CS244b - new method that takes in a txId - to support starting a txn based on coordinator
+    //txn id
+    public Transaction begin(int txId) {
+        return begin(ROLLBACK_LISTENER_NONE, txId, timeoutMillis, 0, IsolationLevel.READ_COMMITTED);
+    }
+    
     /**
      * Begin a new transaction.
      * @param listener to be notified in case of a rollback
@@ -691,7 +697,7 @@ public class TransactionStore {
      * @param transactionId id for an open transaction
      * @return Transaction object.
      */
-    Transaction getTransaction(int transactionId) {
+    public Transaction getTransaction(int transactionId) {
         return transactions.get(transactionId);
     }
 

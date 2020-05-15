@@ -15,6 +15,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.h2.engine.IsolationLevel;
+import org.h2.engine.Session;
 import org.h2.mvstore.DataUtils;
 import org.h2.mvstore.MVMap;
 import org.h2.mvstore.MVStore;
@@ -408,7 +409,7 @@ public final class Transaction {
      *
      * @return key for the newly added undo log entry
      */
-    long log(Record<?,?> logRecord) {
+    public long log(Record<?,?> logRecord) {
         long currentState = statusAndLogId.getAndIncrement();
         long logId = getLogId(currentState);
         if (logId >= LOG_ID_LIMIT) {
@@ -426,8 +427,11 @@ public final class Transaction {
 //          System.out.println("record class: " + logRecord.getClass());
 //          String xml = TwoPCUtils.toXML(logRecord, logRecord.getClass());
 //          System.out.println("xml: " + xml);
-          result = TwoPCCoordinator.getInstance()
-              .sendMessage(String.valueOf(globalTxId), "log", TwoPCUtils.serialize(logRecord));
+          
+        	String dbName = ((Session)listener).getDatabase().getName(); 
+        	String dbtx = dbName + "-" + String.valueOf(transactionId);
+        	result = TwoPCCoordinator.getInstance()
+              .sendMessage(dbtx, "log", TwoPCUtils.serialize(logRecord));
         } catch (InterruptedException | ExecutionException e) {
           // TODO Auto-generated catch block
           System.err.println("Failure sending log message: " + e.getMessage());
@@ -452,7 +456,7 @@ public final class Transaction {
     /**
      * Remove the last log entry.
      */
-    void logUndo() {
+    public void logUndo() {
         long currentState = statusAndLogId.decrementAndGet();
         long logId = getLogId(currentState);
         if (logId >= LOG_ID_LIMIT) {

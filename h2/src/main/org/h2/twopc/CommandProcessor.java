@@ -1,6 +1,10 @@
 package org.h2.twopc;
 
+import org.h2.engine.Engine;
 import org.h2.mvstore.tx.Record;
+import org.h2.mvstore.tx.Transaction;
+import org.h2.mvstore.tx.TransactionStore;
+import org.h2.util.StringUtils;
 
 import io.grpc.stub.StreamObserver;
 
@@ -15,7 +19,12 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
     System.out.println("Command       : " + command);
     
     TwoPCResponse.Builder response = TwoPCResponse.newBuilder();
-    System.out.println("TID           : " + request.getTid());
+    
+	String dbtx = request.getTid();
+	String db = dbtx.substring(0, dbtx.indexOf('-'));
+	String tid = dbtx.substring(dbtx.indexOf('-') + 1);
+	System.out.println("DB            : " + db);
+    System.out.println("TID           : " + tid);
     System.out.println("Received data : " + request.getData());
     
     switch (command.toLowerCase()) {
@@ -26,6 +35,7 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
 //          Record logRecord = TwoPCUtils.fromXML(xml, Record.class);
           Record<?,?> logRecord = (Record<?, ?>)TwoPCUtils.deserialize(request.getData().toByteArray());
           System.out.println("Record        : " + logRecord);
+          log(db, tid, logRecord);
         }
       } catch (Exception e) {
         // TODO Auto-generated catch block
@@ -44,6 +54,22 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
     
     responseObserver.onNext(response.build());
     responseObserver.onCompleted();
+  }
+ 
+  private void log(String dbName, String tid, Record<?,?> logRecord) {
+  	TransactionStore ts = Engine.getInstance().getDatabase(dbName).getStore().getTransactionStore();
+  
+  	int txId = Integer.parseInt(tid);
+  
+  	Transaction t = ts.getTransaction(txId);
+  	if (t == null) {
+  		t = ts.begin(txId);
+  	}
+  
+  	long l = t.log(logRecord);
+  	System.out.println("result: " + l);
+  	
+  	t.commit();
   }
   
 }
