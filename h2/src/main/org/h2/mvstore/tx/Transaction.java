@@ -198,7 +198,7 @@ public final class Transaction {
         this.ownerId = ownerId;
         this.isolationLevel = isolationLevel;
         this.listener = listener;
-        System.out.println("Creating a Transaction: " + this);
+//        System.out.println("Creating a Transaction: " + this);
     }
 
     public int getId() {

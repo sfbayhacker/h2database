@@ -5,9 +5,11 @@
  */
 package org.h2.engine;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+
 import org.h2.api.ErrorCode;
 import org.h2.command.CommandInterface;
 import org.h2.command.dml.SetTypes;
@@ -200,7 +202,7 @@ public class Engine implements SessionFactory {
     private Session createSessionAndValidate(ConnectionInfo ci) {
         try {
             Session session = openSession(ci);
-            validateUserAndPassword(true);
+//            validateUserAndPassword(true);
             return session;
         } catch (DbException e) {
             if (e.getErrorCode() == ErrorCode.WRONG_USER_OR_PASSWORD) {
@@ -329,7 +331,15 @@ public class Engine implements SessionFactory {
 
     //cs244b
     public Database getDatabase(String name) {
-    	return DATABASES.get(name);
+    	for(String key: DATABASES.keySet()) {
+    	  System.out.println("Checking " + DATABASES.get(key).getName());
+    	  if (name.equals(DATABASES.get(key).getName())) return DATABASES.get(key);
+    	}
+    	return null;
+    }
+    
+    public Collection<Database> getDatabases() {
+      return DATABASES == null ? null : DATABASES.values();
     }
     
     /**

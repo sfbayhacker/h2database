@@ -518,8 +518,13 @@ public class MVTable extends RegularTable {
 
     @Override
     public void addRow(Session session, Row row) {
-        syncLastModificationIdWithDatabase();
-        
+      addRow(session, row, false);
+    }
+
+    public void addRow(Session session, Row row, boolean grpc) {
+      syncLastModificationIdWithDatabase();
+      
+      if (!grpc) {
         boolean result = false;
         try {
           System.out.println("record class: " + Row.class);
@@ -540,24 +545,25 @@ public class MVTable extends RegularTable {
         if (!result) {
           System.err.println("addrow call returned false");
         }
-        
-        Transaction t = session.getTransaction();
-        long savepoint = t.setSavepoint();
-        try {
-            for (Index index : indexes) {
-                index.add(session, row);
-            }
-        } catch (Throwable e) {
-            try {
-                t.rollbackToSavepoint(savepoint);
-            } catch (Throwable nested) {
-                e.addSuppressed(nested);
-            }
-            throw DbException.convert(e);
-        }
-        analyzeIfRequired(session);
+      }
+      
+      Transaction t = session.getTransaction();
+      long savepoint = t.setSavepoint();
+      try {
+          for (Index index : indexes) {
+              index.add(session, row);
+          }
+      } catch (Throwable e) {
+          try {
+              t.rollbackToSavepoint(savepoint);
+          } catch (Throwable nested) {
+              e.addSuppressed(nested);
+          }
+          throw DbException.convert(e);
+      }
+      analyzeIfRequired(session);
     }
-
+    
     @Override
     public void updateRow(Session session, Row oldRow, Row newRow) {
         newRow.setKey(oldRow.getKey());

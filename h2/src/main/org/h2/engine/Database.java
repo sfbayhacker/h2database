@@ -1235,6 +1235,8 @@ public class Database implements DataHandler, CastDataProvider {
      * @return the user or null
      */
     public User findUser(String name) {
+      System.out.println(users);
+      System.out.println("name = " + name);
         return users.get(StringUtils.toUpperEnglish(name));
     }
 

@@ -5,13 +5,15 @@
  */
 package org.h2.value;
 
+import java.io.Serializable;
+
 /**
  * A versioned value (possibly null).
  * It contains current value and latest committed value if current one is uncommitted.
  * Also for uncommitted values it contains operationId - a combination of
  * transactionId and logId.
  */
-public class VersionedValue<T> {
+public class VersionedValue<T> implements Serializable {
 
     protected VersionedValue() {}
 

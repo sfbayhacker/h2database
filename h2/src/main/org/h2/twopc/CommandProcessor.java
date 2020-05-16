@@ -2,14 +2,18 @@ package org.h2.twopc;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Properties;
 
+import org.h2.engine.ConnectionInfo;
 import org.h2.engine.Database;
 import org.h2.engine.Engine;
+import org.h2.engine.Session;
 import org.h2.mvstore.db.MVTable;
 import org.h2.mvstore.tx.Record;
 import org.h2.mvstore.tx.Transaction;
 import org.h2.mvstore.tx.TransactionStore;
 import org.h2.result.Row;
+import org.h2.security.SHA256;
 import org.h2.table.Table;
 
 import io.grpc.stub.StreamObserver;
@@ -60,6 +64,9 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
       System.out.println("T             : " + t);
       System.out.println("Received data : " + request.getData());
       
+//      boolean proceed = "test".equals(db) && "map".equals(t);
+//      if (!proceed) return;
+      
       try {
         Row row = (Row)TwoPCUtils.deserialize(request.getData().toByteArray());
         addRow(row, t, db);
@@ -79,20 +86,28 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
   }
  
   private void addRow(Row row, String t, String db) {
-    Database d = Engine.getInstance().getDatabase(db);
     
+    Properties p = new Properties();
+    p.setProperty("USER", "SA");
+    p.setProperty("PASSWORD", "");
+    ConnectionInfo ci = new ConnectionInfo("~/test");
+    ci.setUserName("SA");
+    ci.setUserPasswordHash(SHA256.getKeyPasswordHash("SA", new char[0]));
+    Session session = Engine.getInstance().createSession(ci);
+    Database d = session.getDatabase();
     if (d == null) {
       System.err.println("Database " + db + " not found. Aborting addRow operation!");
       return;
     }
     
-    List<Table> table = d.getTableOrViewByName(t);
-    
-    if (table == null || t.isEmpty()) {
+    List<Table> tables = d.getTableOrViewByName("MAP");
+    System.out.println("tables: " + tables);
+    if (tables == null || tables.isEmpty()) {
       System.err.println("Table " + t + " not found. Aborting addRow operation!");
     }
     
-    ((MVTable)table).addRow(d.getSystemSession(), row);
+    ((MVTable)tables.get(0)).addRow(session, row, true);
+    session.commit(false);
   }
   
   private void log(String dbName, String tid, Record<?,?> logRecord) {
