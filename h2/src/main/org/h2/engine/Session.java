@@ -49,6 +49,7 @@ import org.h2.store.InDoubtTransaction;
 import org.h2.store.LobStorageFrontend;
 import org.h2.table.Table;
 import org.h2.table.TableType;
+import org.h2.twopc.TwoPCCoordinator;
 import org.h2.util.DateTimeUtils;
 import org.h2.util.HasSQL;
 import org.h2.util.NetworkConnectionInfo;
@@ -139,7 +140,7 @@ public class Session extends SessionWithState implements TransactionStore.Rollba
 
     private final ArrayList<Table> locks = Utils.newSmallArrayList();
     private UndoLog undoLog;
-    private boolean autoCommit = true;
+    private boolean autoCommit = false;
     private Random random;
     private int lockTimeout;
 
@@ -677,41 +678,54 @@ public class Session extends SessionWithState implements TransactionStore.Rollba
      * @param ddl if the statement was a data definition statement
      */
     public void commit(boolean ddl) {
-        checkCommitRollback();
-
-        currentTransactionName = null;
-        transactionStart = null;
-        boolean forRepeatableRead = false;
-        if (transaction != null) {
-            forRepeatableRead = !transaction.allowNonRepeatableRead();
-            try {
-                markUsedTablesAsUpdated();
-                transaction.commit();
-            } finally {
-                transaction = null;
-            }
-        } else if (containsUncommitted()) {
-            // need to commit even if rollback is not possible
-            // (create/drop table and so on)
-            database.commit(this);
-        }
-        removeTemporaryLobs(true);
-        if (undoLog != null && undoLog.size() > 0) {
-            undoLog.clear();
-        }
-        if (!ddl) {
-            // do not clean the temp tables if the last command was a
-            // create/drop
-            cleanTempTables(false);
-            if (autoCommitAtTransactionEnd) {
-                autoCommit = true;
-                autoCommitAtTransactionEnd = false;
-            }
-        }
-        analyzeTables();
-        endTransaction(forRepeatableRead);
+      commit(ddl, false);
     }
 
+    public void commit(boolean ddl, boolean grpc) {
+      System.out.println("Session::commit()");
+      
+      boolean result = false;
+      if (!grpc) {
+        result = TwoPCCoordinator.getInstance().commit(this);
+        if (!result) System.err.println("Commit on followers failed! Starting rollback..");
+        rollback(grpc);
+      }
+      
+      checkCommitRollback();
+
+      currentTransactionName = null;
+      transactionStart = null;
+      boolean forRepeatableRead = false;
+      if (transaction != null) {
+          forRepeatableRead = !transaction.allowNonRepeatableRead();
+          try {
+              markUsedTablesAsUpdated();
+              transaction.commit();
+          } finally {
+              transaction = null;
+          }
+      } else if (containsUncommitted()) {
+          // need to commit even if rollback is not possible
+          // (create/drop table and so on)
+          database.commit(this);
+      }
+      removeTemporaryLobs(true);
+      if (undoLog != null && undoLog.size() > 0) {
+          undoLog.clear();
+      }
+      if (!ddl) {
+          // do not clean the temp tables if the last command was a
+          // create/drop
+          cleanTempTables(false);
+          if (autoCommitAtTransactionEnd) {
+              autoCommit = true;
+              autoCommitAtTransactionEnd = false;
+          }
+      }
+      analyzeTables();
+      endTransaction(forRepeatableRead);
+    }
+    
     private void markUsedTablesAsUpdated() {
         // TODO should not rely on locking
         if (!locks.isEmpty()) {
@@ -815,25 +829,37 @@ public class Session extends SessionWithState implements TransactionStore.Rollba
      * Fully roll back the current transaction.
      */
     public void rollback() {
-        checkCommitRollback();
-        currentTransactionName = null;
-        transactionStart = null;
-        boolean needCommit = undoLog != null && undoLog.size() > 0 || transaction != null;
-        if (needCommit) {
-            rollbackTo(null);
-        }
-        if (!locks.isEmpty() || needCommit) {
-            database.commit(this);
-        }
-        idsToRelease = null;
-        cleanTempTables(false);
-        if (autoCommitAtTransactionEnd) {
-            autoCommit = true;
-            autoCommitAtTransactionEnd = false;
-        }
-        endTransaction(transaction != null && !transaction.allowNonRepeatableRead());
+      rollback(false);
     }
 
+    public void rollback(boolean grpc) {
+      System.out.println("Session::rollback()");
+      
+      boolean result = false;
+      if (!grpc) {
+        result = TwoPCCoordinator.getInstance().rollback(this);
+        if (!result) System.err.println("Rollback on followers failed!");
+      }
+      
+      checkCommitRollback();
+      currentTransactionName = null;
+      transactionStart = null;
+      boolean needCommit = undoLog != null && undoLog.size() > 0 || transaction != null;
+      if (needCommit) {
+          rollbackTo(null);
+      }
+      if (!locks.isEmpty() || needCommit) {
+          database.commit(this);
+      }
+      idsToRelease = null;
+      cleanTempTables(false);
+      if (autoCommitAtTransactionEnd) {
+          autoCommit = true;
+          autoCommitAtTransactionEnd = false;
+      }
+      endTransaction(transaction != null && !transaction.allowNonRepeatableRead());
+    }
+    
     /**
      * Partially roll back the current transaction.
      *
@@ -1592,6 +1618,7 @@ public class Session extends SessionWithState implements TransactionStore.Rollba
      * Begin a transaction.
      */
     public void begin() {
+        System.out.println("Session::begin()");
         autoCommitAtTransactionEnd = true;
         autoCommit = false;
     }

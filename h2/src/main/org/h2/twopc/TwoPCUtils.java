@@ -6,13 +6,6 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.StringReader;
-import java.io.StringWriter;
-
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
 
 public class TwoPCUtils {
 
@@ -42,22 +35,22 @@ public class TwoPCUtils {
     }
   }
 
-  public static <T> String toXML(Object o, Class<T> clazz) throws JAXBException {
-    JAXBContext jaxbContext = JAXBContext.newInstance(clazz);
-    Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
-    jaxbMarshaller.setProperty(Marshaller.JAXB_ENCODING, "UTF-8");
-    jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE); // To format XML
-    StringWriter out = new StringWriter();
-    jaxbMarshaller.marshal(o, out);
-    return out.toString();
-  }
-  
-  public static <T> T fromXML(String xml, Class<T> clazz) throws JAXBException {
-    JAXBContext jc = JAXBContext.newInstance(clazz);
-    Unmarshaller unmarshaller = jc.createUnmarshaller();
-    unmarshaller.setProperty(Marshaller.JAXB_ENCODING, "UTF-8");
-    T obj = clazz.cast(unmarshaller.unmarshal(new StringReader(xml)));
-    return obj;
-  }
+//  public static <T> String toXML(Object o, Class<T> clazz) throws JAXBException {
+//    JAXBContext jaxbContext = JAXBContext.newInstance(clazz);
+//    Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
+//    jaxbMarshaller.setProperty(Marshaller.JAXB_ENCODING, "UTF-8");
+//    jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE); // To format XML
+//    StringWriter out = new StringWriter();
+//    jaxbMarshaller.marshal(o, out);
+//    return out.toString();
+//  }
+//  
+//  public static <T> T fromXML(String xml, Class<T> clazz) throws JAXBException {
+//    JAXBContext jc = JAXBContext.newInstance(clazz);
+//    Unmarshaller unmarshaller = jc.createUnmarshaller();
+//    unmarshaller.setProperty(Marshaller.JAXB_ENCODING, "UTF-8");
+//    T obj = clazz.cast(unmarshaller.unmarshal(new StringReader(xml)));
+//    return obj;
+//  }
   
 }

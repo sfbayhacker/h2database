@@ -16,9 +16,12 @@
 
 package org.h2.twopc;
 
+import java.util.concurrent.TimeUnit;
+
 import com.google.protobuf.ByteString;
 
 import io.grpc.Channel;
+import io.grpc.ManagedChannel;
 import io.grpc.StatusRuntimeException;
 
 /**
@@ -35,7 +38,7 @@ public class TwoPCClient {
     // Passing Channels to code makes code easier to test and makes it easier to reuse Channels.
     blockingStub = CommandProcessorGrpc.newBlockingStub(channel);
   }
-
+  
   /** send command to server. */
   public String process(String command, String tid, ByteString data) {
     System.out.println("Sending command - " + command);
@@ -54,5 +57,13 @@ public class TwoPCClient {
     }
     System.out.println("Reply: " + response.getReply());
     return response.getReply();
+  }
+  
+  public void shutdown() {
+    try {
+      ((ManagedChannel)blockingStub.getChannel()).shutdownNow().awaitTermination(5, TimeUnit.SECONDS);
+    } catch (InterruptedException e) {
+      System.err.println("Error shutting down managed channel!");
+    }
   }
 }

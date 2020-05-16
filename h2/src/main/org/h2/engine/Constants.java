@@ -433,6 +433,11 @@ public class Constants {
      * The name of the server properties file for the H2 Console.
      */
     public static final String SERVER_PROPERTIES_NAME = ".h2.server.properties";
+    
+    /**
+     * cs244b: The name of the server properties file for the H2 Console.
+     */
+    public static final String CLUSTER_PROPERTIES_NAME = "h2.cluster.properties";
 
     /**
      * Queries that take longer than this number of milliseconds are written to

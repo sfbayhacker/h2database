@@ -523,32 +523,21 @@ public class MVTable extends RegularTable {
 
     public void addRow(Session session, Row row, boolean grpc) {
       syncLastModificationIdWithDatabase();
-      
-      if (!grpc) {
-        boolean result = false;
-        try {
-          System.out.println("record class: " + Row.class);
-          String dbName = session.getDatabase().getName(); 
-          String dbtx = dbName + "-" + getName();
-          result = TwoPCCoordinator.getInstance()
-              .sendMessage(dbtx, "addrow", TwoPCUtils.serialize(row));
-        } catch (InterruptedException | ExecutionException e) {
-          // TODO Auto-generated catch block
-          System.err.println("Failure sending log message: " + e.getMessage());
-          e.printStackTrace();
-          result = false;
-        } catch (IOException e) {
-          // TODO Auto-generated catch block
-          e.printStackTrace();
-        }
-        
-        if (!result) {
-          System.err.println("addrow call returned false");
-        }
-      }
-      
+
       Transaction t = session.getTransaction();
       long savepoint = t.setSavepoint();
+      
+      boolean result = false;
+      if (!grpc) {
+        result = TwoPCCoordinator.getInstance().addRow(session, getName(), row);
+        //if members cannot process instruction, rollback txn and return
+        if (!result) {
+          System.err.println("addRow failed! Starting rollback..");
+          session.rollback(grpc);
+          return;
+        }
+      }
+
       try {
           for (Index index : indexes) {
               index.add(session, row);
