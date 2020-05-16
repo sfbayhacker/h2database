@@ -401,7 +401,7 @@ public class Server extends Tool implements Runnable, ShutdownHandler {
             buff.append("Not started");
         } else if (isRunning(false)) {
             buff.append(service.getType()).
-                append(" server running at ").
+                append(" server running at testing... ").
                 append(service.getURL()).
                 append(" (");
             if (service.getAllowOthers()) {

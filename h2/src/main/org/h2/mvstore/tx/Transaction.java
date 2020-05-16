@@ -198,6 +198,7 @@ public final class Transaction {
         this.ownerId = ownerId;
         this.isolationLevel = isolationLevel;
         this.listener = listener;
+        System.out.println("Creating a Transaction: " + this);
     }
 
     public int getId() {
@@ -422,32 +423,29 @@ public final class Transaction {
         checkOpen(currentStatus);
         
         //CS244b TODO: send log calls to peers
-        boolean result = false;
-        try {
+//        boolean result = false;
+//        try {
 //          System.out.println("record class: " + logRecord.getClass());
-//          String xml = TwoPCUtils.toXML(logRecord, logRecord.getClass());
-//          System.out.println("xml: " + xml);
-          
-        	String dbName = ((Session)listener).getDatabase().getName(); 
-        	String dbtx = dbName + "-" + String.valueOf(transactionId);
-        	result = TwoPCCoordinator.getInstance()
-              .sendMessage(dbtx, "log", TwoPCUtils.serialize(logRecord));
-        } catch (InterruptedException | ExecutionException e) {
-          // TODO Auto-generated catch block
-          System.err.println("Failure sending log message: " + e.getMessage());
-          e.printStackTrace();
-          result = false;
-        } catch (IOException e) {
-          // TODO Auto-generated catch block
-          e.printStackTrace();
-        }
-        
-        if (!result) {
-          throw DataUtils.newMVStoreException(
-              DataUtils.ERROR_TWO_PC,
-              "Transaction {0}: log call returned false",
-              globalTxId);
-        }
+//        	String dbName = ((Session)listener).getDatabase().getName(); 
+//        	String dbtx = dbName + "-" + String.valueOf(transactionId);
+//        	result = TwoPCCoordinator.getInstance()
+//              .sendMessage(dbtx, "log", TwoPCUtils.serialize(logRecord));
+//        } catch (InterruptedException | ExecutionException e) {
+//          // TODO Auto-generated catch block
+//          System.err.println("Failure sending log message: " + e.getMessage());
+//          e.printStackTrace();
+//          result = false;
+//        } catch (IOException e) {
+//          // TODO Auto-generated catch block
+//          e.printStackTrace();
+//        }
+//        
+//        if (!result) {
+//          throw DataUtils.newMVStoreException(
+//              DataUtils.ERROR_TWO_PC,
+//              "Transaction {0}: log call returned false",
+//              globalTxId);
+//        }
         
         long undoKey = store.addUndoLogRecord(transactionId, logId, logRecord);
         return undoKey;
@@ -470,6 +468,7 @@ public final class Transaction {
         
         //CS244b TODO: send log undo calls to peers
         
+        System.out.println("logUndo record class: " + transactionId);
         store.removeUndoLogRecord(transactionId);
     }
 

@@ -5,11 +5,14 @@
  */
 package org.h2.mvstore.db;
 
+import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+
 import org.h2.api.DatabaseEventListener;
 import org.h2.api.ErrorCode;
 import org.h2.command.ddl.CreateTableData;
@@ -33,6 +36,8 @@ import org.h2.schema.SchemaObject;
 import org.h2.table.Column;
 import org.h2.table.IndexColumn;
 import org.h2.table.RegularTable;
+import org.h2.twopc.TwoPCCoordinator;
+import org.h2.twopc.TwoPCUtils;
 import org.h2.util.DebuggingThreadLocal;
 import org.h2.util.MathUtils;
 import org.h2.util.Utils;
@@ -514,6 +519,28 @@ public class MVTable extends RegularTable {
     @Override
     public void addRow(Session session, Row row) {
         syncLastModificationIdWithDatabase();
+        
+        boolean result = false;
+        try {
+          System.out.println("record class: " + Row.class);
+          String dbName = session.getDatabase().getName(); 
+          String dbtx = dbName + "-" + getName();
+          result = TwoPCCoordinator.getInstance()
+              .sendMessage(dbtx, "addrow", TwoPCUtils.serialize(row));
+        } catch (InterruptedException | ExecutionException e) {
+          // TODO Auto-generated catch block
+          System.err.println("Failure sending log message: " + e.getMessage());
+          e.printStackTrace();
+          result = false;
+        } catch (IOException e) {
+          // TODO Auto-generated catch block
+          e.printStackTrace();
+        }
+        
+        if (!result) {
+          System.err.println("addrow call returned false");
+        }
+        
         Transaction t = session.getTransaction();
         long savepoint = t.setSavepoint();
         try {

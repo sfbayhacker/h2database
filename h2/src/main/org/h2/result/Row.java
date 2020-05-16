@@ -5,12 +5,14 @@
  */
 package org.h2.result;
 
+import java.io.Serializable;
+
 import org.h2.value.Value;
 
 /**
  * Represents a row in a table.
  */
-public abstract class Row extends SearchRow {
+public abstract class Row extends SearchRow implements Serializable {
 
     /**
      * Creates a new row.
