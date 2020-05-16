@@ -129,6 +129,7 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
   private void commit() {
     if (session == null) {
       // Nothing to commit
+      System.out.println("Nothing to commit!");
       return;
     }
 
@@ -139,6 +140,7 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
   private void rollback() {
     if (session == null) {
       // Nothing to rollback
+      System.out.println("Nothing to rollback!");
       return;
     }
 

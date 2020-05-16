@@ -526,10 +526,9 @@ public class MVTable extends RegularTable {
 
       Transaction t = session.getTransaction();
       long savepoint = t.setSavepoint();
-      
-      boolean result = false;
-      if (!grpc) {
-        result = TwoPCCoordinator.getInstance().addRow(session, getName(), row);
+
+      if (!grpc && TwoPCCoordinator.getInstance().isClustered()) {
+        boolean result = TwoPCCoordinator.getInstance().addRow(session, getName(), row);
         //if members cannot process instruction, rollback txn and return
         if (!result) {
           System.err.println("addRow failed! Starting rollback..");

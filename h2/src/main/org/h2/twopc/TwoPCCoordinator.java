@@ -27,6 +27,7 @@ public class TwoPCCoordinator {
   private String hostId;
   private Properties props;
   private String grpcPort;
+  private boolean clustered;
 
   private static class InstanceHolder {
     private static TwoPCCoordinator INSTANCE = new TwoPCCoordinator();
@@ -38,8 +39,9 @@ public class TwoPCCoordinator {
       hostId = props.get("hostId") == null ? "0" : props.get("hostId").toString();
       grpcPort = props.get("grpcPort") == null ? "50051" : props.get("grpcPort").toString();
       Object peers = props.get("peerAddresses");
-      if (peers != null) {
+      if ((clustered = peers != null)) {
         cohorts = peers.toString().split("\\|");
+      } else {
       }
     } catch (Exception e) {
       System.err.println("Error loading properties!");
@@ -227,6 +229,10 @@ public class TwoPCCoordinator {
     return grpcPort;
   }
 
+  public boolean isClustered() {
+    return clustered;
+  }
+  
   private class CommandRunner implements Callable<String> {
 
     private TwoPCClient client;
