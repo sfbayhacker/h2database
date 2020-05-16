@@ -1,5 +1,6 @@
 package org.h2.twopc;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -11,7 +12,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.h2.engine.Constants;
-import org.h2.message.DbException;
 import org.h2.util.SortedProperties;
 
 import com.google.protobuf.ByteString;
@@ -23,15 +23,27 @@ public class TwoPCCoordinator {
   
   private String[] cohorts;
   private String hostId;
+  private Properties props;
+  private String grpcPort;
   
   private static class InstanceHolder {
     private static TwoPCCoordinator INSTANCE = new TwoPCCoordinator();
   }
   
   private TwoPCCoordinator() {
-//    readProperties();
-    this.cohorts = new String[] {"10.1.10.181:50051"};
-    this.hostId = "1";
+    try {
+      props = readProperties();
+      hostId = props.get("hostId")==null ? "0" : props.get("hostId").toString();
+      grpcPort = props.get("grpcPort")==null ? "50051" : props.get("grpcPort").toString(); 
+      Object peers = props.get("peerAddresses");
+      if (peers != null) {
+        cohorts = peers.toString().split("\\|");
+      }
+    } catch(Exception e) {
+      System.err.println("Error loading properties!");
+    } 
+//    this.cohorts = new String[] {"10.1.10.181:50051"};
+//    this.hostId = "1";
   }
   
   public static TwoPCCoordinator getInstance() {
@@ -115,25 +127,16 @@ public class TwoPCCoordinator {
     }
   }
   
-  private void readProperties() {
-    try {
-        String serverPropertiesDir = Constants.SERVER_PROPERTIES_DIR;
-        if ("null".equals(serverPropertiesDir)) {
-            return;
-        }
-        
-        Properties props = SortedProperties.loadProperties(
-                serverPropertiesDir + "/" + Constants.SERVER_PROPERTIES_NAME);
-        
-        hostId = props.get("hostId").toString();
-        
-        Object peers = props.get("peerAddresses");
-        if (peers != null) {
-          cohorts = peers.toString().split("\\|");
-        }
-    } catch (Exception e) {
-        DbException.traceThrowable(e);
-    }
+  private Properties readProperties() throws IOException {
+      String serverPropertiesDir = Constants.SERVER_PROPERTIES_DIR;
+      if ("null".equals(serverPropertiesDir)) {
+          return null;
+      }
+      
+      Properties props = SortedProperties.loadProperties(
+              serverPropertiesDir + "/" + Constants.SERVER_PROPERTIES_NAME);
+      
+      return props;
   }
   
   public String[] getCohorts() {
@@ -142,6 +145,10 @@ public class TwoPCCoordinator {
   
   public String getHostId() {
     return hostId;
+  }
+  
+  public String getGrpcPort() {
+    return grpcPort;
   }
   
   private class CommandRunner implements Callable<String> {
