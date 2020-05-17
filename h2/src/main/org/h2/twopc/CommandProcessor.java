@@ -21,6 +21,16 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
 
   private Session session;
 
+  private static class InstanceHolder {
+    private static CommandProcessor INSTANCE = new CommandProcessor();
+  }
+  
+  private CommandProcessor() {}
+  
+  public static CommandProcessor getInstance() {
+    return InstanceHolder.INSTANCE;
+  }
+  
   @Override
   public void processCommand(TwoPCRequest request, StreamObserver<TwoPCResponse> responseObserver) {
     // TODO Auto-generated method stub

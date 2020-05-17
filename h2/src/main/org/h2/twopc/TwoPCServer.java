@@ -16,7 +16,7 @@ public class TwoPCServer {
     /* The port on which the server should run */
     int port = Integer.parseInt(TwoPCCoordinator.getInstance().getGrpcPort());
     server = ServerBuilder.forPort(port)
-        .addService(new CommandProcessor())
+        .addService(CommandProcessor.getInstance())
         .build()
         .start();
     System.out.println("Server started, listening on " + port);
