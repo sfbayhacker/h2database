@@ -122,7 +122,7 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
     }
 
     ((MVTable) tables.get(0)).addRow(session, row, true);
-    session.commit(false);
+//    session.commit(false);
 //    session.close();
   }
 
