@@ -527,7 +527,8 @@ public class MVTable extends RegularTable {
       Transaction t = session.getTransaction();
       long savepoint = t.setSavepoint();
 
-      if (!grpc && TwoPCCoordinator.getInstance().isClustered()) {
+      if (!grpc && TwoPCCoordinator.getInstance().isClustered() 
+          && "map".equalsIgnoreCase(getName()) && "sa".equalsIgnoreCase(session.getUser().getName())) {
         boolean result = TwoPCCoordinator.getInstance().addRow(session, getName(), row);
         //if members cannot process instruction, rollback txn and return
         if (!result) {

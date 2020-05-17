@@ -163,6 +163,7 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
     ConnectionInfo ci = new ConnectionInfo("~/test");
     ci.setUserName("SA");
     ci.setUserPasswordHash(SHA256.getKeyPasswordHash("SA", new char[0]));
+    ci.setProperty("WRITE_DELAY", "0");
     return Engine.getInstance().createSession(ci);
   }
 
