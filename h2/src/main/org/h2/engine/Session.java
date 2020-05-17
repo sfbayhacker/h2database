@@ -686,8 +686,10 @@ public class Session extends SessionWithState implements TransactionStore.Rollba
       
       if (!grpc && TwoPCCoordinator.getInstance().isClustered()) {
         boolean result = TwoPCCoordinator.getInstance().commit(this);
-        if (!result) System.err.println("Commit on followers failed! Starting rollback..");
-        rollback(grpc);
+        if (!result) {
+          System.err.println("Commit on followers failed! Starting rollback..");
+          rollback(grpc);
+        }
       }
       
       checkCommitRollback();
