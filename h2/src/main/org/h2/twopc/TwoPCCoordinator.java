@@ -3,6 +3,7 @@ package org.h2.twopc;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Arrays; 
 import java.util.Properties;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -54,13 +55,15 @@ public class TwoPCCoordinator {
     return InstanceHolder.INSTANCE;
   }
 
-  public boolean addRow(Session session, String tableName, Row row) {
+  public boolean rowOp(Session session, String tableName, Row row, Row newRow, String op) {
     boolean result = false;
     try {
       String dbName = session.getDatabase().getName(); 
       String dbtx = dbName + "-" + tableName;
+      System.out.println("rowOp " + op + "; Row : " + row + "; Class is " + row.getClass() + "; newRow: " + newRow);
+      List<Row> list = Arrays.asList(new Row[]{row, newRow});
       result = TwoPCCoordinator.getInstance()
-          .sendMessage(dbtx, "addrow", TwoPCUtils.serialize(row));
+          .sendMessage(dbtx, op, TwoPCUtils.serialize(list));
     } catch (InterruptedException | ExecutionException | IOException e) {
       // TODO Auto-generated catch block
       System.err.println("Failure sending log message: " + e.getMessage());
@@ -69,12 +72,12 @@ public class TwoPCCoordinator {
     }
     
     if (!result) {
-      System.err.println("addrow call returned false");
+      System.err.println(op + " call returned false");
     }
     
     return result;
   }
-  
+
   public boolean commit(Session session) {
     boolean result = false;
     try {

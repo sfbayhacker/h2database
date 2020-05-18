@@ -12,6 +12,7 @@ public class TwoPCUtils {
   public static byte[] serialize(Object obj) throws IOException {
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     ObjectOutputStream os = new ObjectOutputStream(out);
+    System.out.println("Serializing object " + obj);
     os.writeObject(obj);
     return out.toByteArray();
   }

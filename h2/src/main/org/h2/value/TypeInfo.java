@@ -5,6 +5,7 @@
  */
 package org.h2.value;
 
+import java.io.Serializable;
 import java.util.Objects;
 import org.h2.api.ErrorCode;
 import org.h2.api.IntervalQualifier;
@@ -14,7 +15,7 @@ import org.h2.util.MathUtils;
 /**
  * Data type with parameters.
  */
-public class TypeInfo {
+public class TypeInfo implements Serializable {
 
     /**
      * UNKNOWN type with parameters.

@@ -39,7 +39,9 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
     TwoPCResponse.Builder response = TwoPCResponse.newBuilder();
 
     switch (command.toLowerCase()) {
-      case "addrow": {
+      case "addrow":
+      case "removerow": 
+      case "updaterow": {
         // sending dbname-tablename for now as tid
         String dbtx = request.getTid();
   
@@ -52,8 +54,10 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
         boolean hasError = false;
   
         try {
-          Row row = (Row) TwoPCUtils.deserialize(request.getData().toByteArray());
-          addRow(row, t, db);
+	  List<Row> list = (List<Row>)TwoPCUtils.deserialize(request.getData().toByteArray());
+          Row row = list.get(0);
+          Row newRow = list.get(1);
+          rowOp(row, newRow, t, db, command);
         } catch (ClassNotFoundException | IOException e) {
           System.err.println("Error while de-serializing row: " + e.getMessage());
           hasError = true;
@@ -114,24 +118,30 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
     responseObserver.onCompleted();
   }
 
-  private void addRow(Row row, String t, String db) {
+  private void rowOp(Row row, Row newRow,  String t, String db, String op) {
     if (session == null || session.isClosed()) {
       session = createSession();
     }
 
     Database d = session.getDatabase();
     if (d == null) {
-      System.err.println("Database " + db + " not found. Aborting addRow operation!");
+      System.err.println("Database " + db + " not found. Aborting " + op + " operation!");
       return;
     }
 
     List<Table> tables = d.getTableOrViewByName("MAP");
     System.out.println("tables: " + tables);
     if (tables == null || tables.isEmpty()) {
-      System.err.println("Table " + t + " not found. Aborting addRow operation!");
+      System.err.println("Table " + t + " not found. Aborting " + op + " operation!");
     }
 
-    ((MVTable) tables.get(0)).addRow(session, row, true);
+    if (op.equalsIgnoreCase("addRow")) {
+        ((MVTable) tables.get(0)).addRow(session, row, true);
+    } else if (op.equalsIgnoreCase("removeRow")) {
+        ((MVTable) tables.get(0)).removeRow(session, row, true);
+    } else if (op.equalsIgnoreCase("updateRow")) {
+        ((MVTable) tables.get(0)).updateRow(session, row, newRow, true);
+    }
 //    session.commit(false);
 //    session.close();
   }
