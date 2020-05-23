@@ -21,6 +21,9 @@ private static final long serialVersionUID = 0L;
   }
   private TwoPCRequest() {
     command_ = "";
+    db_ = "";
+    table_ = "";
+    sid_ = "";
     tid_ = "";
     data_ = com.google.protobuf.ByteString.EMPTY;
   }
@@ -64,10 +67,28 @@ private static final long serialVersionUID = 0L;
           case 18: {
             java.lang.String s = input.readStringRequireUtf8();
 
-            tid_ = s;
+            db_ = s;
             break;
           }
           case 26: {
+            java.lang.String s = input.readStringRequireUtf8();
+
+            table_ = s;
+            break;
+          }
+          case 34: {
+            java.lang.String s = input.readStringRequireUtf8();
+
+            sid_ = s;
+            break;
+          }
+          case 42: {
+            java.lang.String s = input.readStringRequireUtf8();
+
+            tid_ = s;
+            break;
+          }
+          case 50: {
 
             data_ = input.readBytes();
             break;
@@ -140,10 +161,122 @@ private static final long serialVersionUID = 0L;
     }
   }
 
-  public static final int TID_FIELD_NUMBER = 2;
+  public static final int DB_FIELD_NUMBER = 2;
+  private volatile java.lang.Object db_;
+  /**
+   * <code>string db = 2;</code>
+   * @return The db.
+   */
+  public java.lang.String getDb() {
+    java.lang.Object ref = db_;
+    if (ref instanceof java.lang.String) {
+      return (java.lang.String) ref;
+    } else {
+      com.google.protobuf.ByteString bs = 
+          (com.google.protobuf.ByteString) ref;
+      java.lang.String s = bs.toStringUtf8();
+      db_ = s;
+      return s;
+    }
+  }
+  /**
+   * <code>string db = 2;</code>
+   * @return The bytes for db.
+   */
+  public com.google.protobuf.ByteString
+      getDbBytes() {
+    java.lang.Object ref = db_;
+    if (ref instanceof java.lang.String) {
+      com.google.protobuf.ByteString b = 
+          com.google.protobuf.ByteString.copyFromUtf8(
+              (java.lang.String) ref);
+      db_ = b;
+      return b;
+    } else {
+      return (com.google.protobuf.ByteString) ref;
+    }
+  }
+
+  public static final int TABLE_FIELD_NUMBER = 3;
+  private volatile java.lang.Object table_;
+  /**
+   * <code>string table = 3;</code>
+   * @return The table.
+   */
+  public java.lang.String getTable() {
+    java.lang.Object ref = table_;
+    if (ref instanceof java.lang.String) {
+      return (java.lang.String) ref;
+    } else {
+      com.google.protobuf.ByteString bs = 
+          (com.google.protobuf.ByteString) ref;
+      java.lang.String s = bs.toStringUtf8();
+      table_ = s;
+      return s;
+    }
+  }
+  /**
+   * <code>string table = 3;</code>
+   * @return The bytes for table.
+   */
+  public com.google.protobuf.ByteString
+      getTableBytes() {
+    java.lang.Object ref = table_;
+    if (ref instanceof java.lang.String) {
+      com.google.protobuf.ByteString b = 
+          com.google.protobuf.ByteString.copyFromUtf8(
+              (java.lang.String) ref);
+      table_ = b;
+      return b;
+    } else {
+      return (com.google.protobuf.ByteString) ref;
+    }
+  }
+
+  public static final int SID_FIELD_NUMBER = 4;
+  private volatile java.lang.Object sid_;
+  /**
+   * <code>string sid = 4;</code>
+   * @return The sid.
+   */
+  public java.lang.String getSid() {
+    java.lang.Object ref = sid_;
+    if (ref instanceof java.lang.String) {
+      return (java.lang.String) ref;
+    } else {
+      com.google.protobuf.ByteString bs = 
+          (com.google.protobuf.ByteString) ref;
+      java.lang.String s = bs.toStringUtf8();
+      sid_ = s;
+      return s;
+    }
+  }
+  /**
+   * <code>string sid = 4;</code>
+   * @return The bytes for sid.
+   */
+  public com.google.protobuf.ByteString
+      getSidBytes() {
+    java.lang.Object ref = sid_;
+    if (ref instanceof java.lang.String) {
+      com.google.protobuf.ByteString b = 
+          com.google.protobuf.ByteString.copyFromUtf8(
+              (java.lang.String) ref);
+      sid_ = b;
+      return b;
+    } else {
+      return (com.google.protobuf.ByteString) ref;
+    }
+  }
+
+  public static final int TID_FIELD_NUMBER = 5;
   private volatile java.lang.Object tid_;
   /**
-   * <code>string tid = 2;</code>
+   * <pre>
+   *TODO: change tid to long
+   * </pre>
+   *
+   * <code>string tid = 5;</code>
    * @return The tid.
    */
   public java.lang.String getTid() {
@@ -159,7 +292,11 @@ private static final long serialVersionUID = 0L;
     }
   }
   /**
-   * <code>string tid = 2;</code>
+   * <pre>
+   *TODO: change tid to long
+   * </pre>
+   *
+   * <code>string tid = 5;</code>
    * @return The bytes for tid.
    */
   public com.google.protobuf.ByteString
@@ -176,10 +313,10 @@ private static final long serialVersionUID = 0L;
     }
   }
 
-  public static final int DATA_FIELD_NUMBER = 3;
+  public static final int DATA_FIELD_NUMBER = 6;
   private com.google.protobuf.ByteString data_;
   /**
-   * <code>bytes data = 3;</code>
+   * <code>bytes data = 6;</code>
    * @return The data.
    */
   public com.google.protobuf.ByteString getData() {
@@ -203,11 +340,20 @@ private static final long serialVersionUID = 0L;
     if (!getCommandBytes().isEmpty()) {
       com.google.protobuf.GeneratedMessageV3.writeString(output, 1, command_);
     }
+    if (!getDbBytes().isEmpty()) {
+      com.google.protobuf.GeneratedMessageV3.writeString(output, 2, db_);
+    }
+    if (!getTableBytes().isEmpty()) {
+      com.google.protobuf.GeneratedMessageV3.writeString(output, 3, table_);
+    }
+    if (!getSidBytes().isEmpty()) {
+      com.google.protobuf.GeneratedMessageV3.writeString(output, 4, sid_);
+    }
     if (!getTidBytes().isEmpty()) {
-      com.google.protobuf.GeneratedMessageV3.writeString(output, 2, tid_);
+      com.google.protobuf.GeneratedMessageV3.writeString(output, 5, tid_);
     }
     if (!data_.isEmpty()) {
-      output.writeBytes(3, data_);
+      output.writeBytes(6, data_);
     }
     unknownFields.writeTo(output);
   }
@@ -221,12 +367,21 @@ private static final long serialVersionUID = 0L;
     if (!getCommandBytes().isEmpty()) {
       size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, command_);
     }
+    if (!getDbBytes().isEmpty()) {
+      size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, db_);
+    }
+    if (!getTableBytes().isEmpty()) {
+      size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, table_);
+    }
+    if (!getSidBytes().isEmpty()) {
+      size += com.google.protobuf.GeneratedMessageV3.computeStringSize(4, sid_);
+    }
     if (!getTidBytes().isEmpty()) {
-      size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, tid_);
+      size += com.google.protobuf.GeneratedMessageV3.computeStringSize(5, tid_);
     }
     if (!data_.isEmpty()) {
       size += com.google.protobuf.CodedOutputStream
-        .computeBytesSize(3, data_);
+        .computeBytesSize(6, data_);
     }
     size += unknownFields.getSerializedSize();
     memoizedSize = size;
@@ -245,6 +400,12 @@ private static final long serialVersionUID = 0L;
 
     if (!getCommand()
         .equals(other.getCommand())) return false;
+    if (!getDb()
+        .equals(other.getDb())) return false;
+    if (!getTable()
+        .equals(other.getTable())) return false;
+    if (!getSid()
+        .equals(other.getSid())) return false;
     if (!getTid()
         .equals(other.getTid())) return false;
     if (!getData()
@@ -262,6 +423,12 @@ private static final long serialVersionUID = 0L;
     hash = (19 * hash) + getDescriptor().hashCode();
     hash = (37 * hash) + COMMAND_FIELD_NUMBER;
     hash = (53 * hash) + getCommand().hashCode();
+    hash = (37 * hash) + DB_FIELD_NUMBER;
+    hash = (53 * hash) + getDb().hashCode();
+    hash = (37 * hash) + TABLE_FIELD_NUMBER;
+    hash = (53 * hash) + getTable().hashCode();
+    hash = (37 * hash) + SID_FIELD_NUMBER;
+    hash = (53 * hash) + getSid().hashCode();
     hash = (37 * hash) + TID_FIELD_NUMBER;
     hash = (53 * hash) + getTid().hashCode();
     hash = (37 * hash) + DATA_FIELD_NUMBER;
@@ -405,6 +572,12 @@ private static final long serialVersionUID = 0L;
       super.clear();
       command_ = "";
 
+      db_ = "";
+
+      table_ = "";
+
+      sid_ = "";
+
       tid_ = "";
 
       data_ = com.google.protobuf.ByteString.EMPTY;
@@ -436,6 +609,9 @@ private static final long serialVersionUID = 0L;
     public org.h2.twopc.TwoPCRequest buildPartial() {
       org.h2.twopc.TwoPCRequest result = new org.h2.twopc.TwoPCRequest(this);
       result.command_ = command_;
+      result.db_ = db_;
+      result.table_ = table_;
+      result.sid_ = sid_;
       result.tid_ = tid_;
       result.data_ = data_;
       onBuilt();
@@ -488,6 +664,18 @@ private static final long serialVersionUID = 0L;
       if (other == org.h2.twopc.TwoPCRequest.getDefaultInstance()) return this;
       if (!other.getCommand().isEmpty()) {
         command_ = other.command_;
+        onChanged();
+      }
+      if (!other.getDb().isEmpty()) {
+        db_ = other.db_;
+        onChanged();
+      }
+      if (!other.getTable().isEmpty()) {
+        table_ = other.table_;
+        onChanged();
+      }
+      if (!other.getSid().isEmpty()) {
+        sid_ = other.sid_;
         onChanged();
       }
       if (!other.getTid().isEmpty()) {
@@ -602,9 +790,241 @@ private static final long serialVersionUID = 0L;
       return this;
     }
 
+    private java.lang.Object db_ = "";
+    /**
+     * <code>string db = 2;</code>
+     * @return The db.
+     */
+    public java.lang.String getDb() {
+      java.lang.Object ref = db_;
+      if (!(ref instanceof java.lang.String)) {
+        com.google.protobuf.ByteString bs =
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        db_ = s;
+        return s;
+      } else {
+        return (java.lang.String) ref;
+      }
+    }
+    /**
+     * <code>string db = 2;</code>
+     * @return The bytes for db.
+     */
+    public com.google.protobuf.ByteString
+        getDbBytes() {
+      java.lang.Object ref = db_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        db_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+    /**
+     * <code>string db = 2;</code>
+     * @param value The db to set.
+     * @return This builder for chaining.
+     */
+    public Builder setDb(
+        java.lang.String value) {
+      if (value == null) {
+    throw new NullPointerException();
+  }
+  
+      db_ = value;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>string db = 2;</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearDb() {
+      
+      db_ = getDefaultInstance().getDb();
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>string db = 2;</code>
+     * @param value The bytes for db to set.
+     * @return This builder for chaining.
+     */
+    public Builder setDbBytes(
+        com.google.protobuf.ByteString value) {
+      if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+      
+      db_ = value;
+      onChanged();
+      return this;
+    }
+
+    private java.lang.Object table_ = "";
+    /**
+     * <code>string table = 3;</code>
+     * @return The table.
+     */
+    public java.lang.String getTable() {
+      java.lang.Object ref = table_;
+      if (!(ref instanceof java.lang.String)) {
+        com.google.protobuf.ByteString bs =
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        table_ = s;
+        return s;
+      } else {
+        return (java.lang.String) ref;
+      }
+    }
+    /**
+     * <code>string table = 3;</code>
+     * @return The bytes for table.
+     */
+    public com.google.protobuf.ByteString
+        getTableBytes() {
+      java.lang.Object ref = table_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        table_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+    /**
+     * <code>string table = 3;</code>
+     * @param value The table to set.
+     * @return This builder for chaining.
+     */
+    public Builder setTable(
+        java.lang.String value) {
+      if (value == null) {
+    throw new NullPointerException();
+  }
+  
+      table_ = value;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>string table = 3;</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearTable() {
+      
+      table_ = getDefaultInstance().getTable();
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>string table = 3;</code>
+     * @param value The bytes for table to set.
+     * @return This builder for chaining.
+     */
+    public Builder setTableBytes(
+        com.google.protobuf.ByteString value) {
+      if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+      
+      table_ = value;
+      onChanged();
+      return this;
+    }
+
+    private java.lang.Object sid_ = "";
+    /**
+     * <code>string sid = 4;</code>
+     * @return The sid.
+     */
+    public java.lang.String getSid() {
+      java.lang.Object ref = sid_;
+      if (!(ref instanceof java.lang.String)) {
+        com.google.protobuf.ByteString bs =
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        sid_ = s;
+        return s;
+      } else {
+        return (java.lang.String) ref;
+      }
+    }
+    /**
+     * <code>string sid = 4;</code>
+     * @return The bytes for sid.
+     */
+    public com.google.protobuf.ByteString
+        getSidBytes() {
+      java.lang.Object ref = sid_;
+      if (ref instanceof String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        sid_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+    /**
+     * <code>string sid = 4;</code>
+     * @param value The sid to set.
+     * @return This builder for chaining.
+     */
+    public Builder setSid(
+        java.lang.String value) {
+      if (value == null) {
+    throw new NullPointerException();
+  }
+  
+      sid_ = value;
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>string sid = 4;</code>
+     * @return This builder for chaining.
+     */
+    public Builder clearSid() {
+      
+      sid_ = getDefaultInstance().getSid();
+      onChanged();
+      return this;
+    }
+    /**
+     * <code>string sid = 4;</code>
+     * @param value The bytes for sid to set.
+     * @return This builder for chaining.
+     */
+    public Builder setSidBytes(
+        com.google.protobuf.ByteString value) {
+      if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+      
+      sid_ = value;
+      onChanged();
+      return this;
+    }
+
     private java.lang.Object tid_ = "";
     /**
-     * <code>string tid = 2;</code>
+     * <pre>
+     *TODO: change tid to long
+     * </pre>
+     *
+     * <code>string tid = 5;</code>
      * @return The tid.
      */
     public java.lang.String getTid() {
@@ -620,7 +1040,11 @@ private static final long serialVersionUID = 0L;
       }
     }
     /**
-     * <code>string tid = 2;</code>
+     * <pre>
+     *TODO: change tid to long
+     * </pre>
+     *
+     * <code>string tid = 5;</code>
      * @return The bytes for tid.
      */
     public com.google.protobuf.ByteString
@@ -637,7 +1061,11 @@ private static final long serialVersionUID = 0L;
       }
     }
     /**
-     * <code>string tid = 2;</code>
+     * <pre>
+     *TODO: change tid to long
+     * </pre>
+     *
+     * <code>string tid = 5;</code>
      * @param value The tid to set.
      * @return This builder for chaining.
      */
@@ -652,7 +1080,11 @@ private static final long serialVersionUID = 0L;
       return this;
     }
     /**
-     * <code>string tid = 2;</code>
+     * <pre>
+     *TODO: change tid to long
+     * </pre>
+     *
+     * <code>string tid = 5;</code>
      * @return This builder for chaining.
      */
     public Builder clearTid() {
@@ -662,7 +1094,11 @@ private static final long serialVersionUID = 0L;
       return this;
     }
     /**
-     * <code>string tid = 2;</code>
+     * <pre>
+     *TODO: change tid to long
+     * </pre>
+     *
+     * <code>string tid = 5;</code>
      * @param value The bytes for tid to set.
      * @return This builder for chaining.
      */
@@ -680,14 +1116,14 @@ private static final long serialVersionUID = 0L;
 
     private com.google.protobuf.ByteString data_ = com.google.protobuf.ByteString.EMPTY;
     /**
-     * <code>bytes data = 3;</code>
+     * <code>bytes data = 6;</code>
      * @return The data.
      */
     public com.google.protobuf.ByteString getData() {
       return data_;
     }
     /**
-     * <code>bytes data = 3;</code>
+     * <code>bytes data = 6;</code>
      * @param value The data to set.
      * @return This builder for chaining.
      */
@@ -701,7 +1137,7 @@ private static final long serialVersionUID = 0L;
       return this;
     }
     /**
-     * <code>bytes data = 3;</code>
+     * <code>bytes data = 6;</code>
      * @return This builder for chaining.
      */
     public Builder clearData() {

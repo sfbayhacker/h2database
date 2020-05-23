@@ -20,19 +20,63 @@ public interface TwoPCRequestOrBuilder extends
       getCommandBytes();
 
   /**
-   * <code>string tid = 2;</code>
+   * <code>string db = 2;</code>
+   * @return The db.
+   */
+  java.lang.String getDb();
+  /**
+   * <code>string db = 2;</code>
+   * @return The bytes for db.
+   */
+  com.google.protobuf.ByteString
+      getDbBytes();
+
+  /**
+   * <code>string table = 3;</code>
+   * @return The table.
+   */
+  java.lang.String getTable();
+  /**
+   * <code>string table = 3;</code>
+   * @return The bytes for table.
+   */
+  com.google.protobuf.ByteString
+      getTableBytes();
+
+  /**
+   * <code>string sid = 4;</code>
+   * @return The sid.
+   */
+  java.lang.String getSid();
+  /**
+   * <code>string sid = 4;</code>
+   * @return The bytes for sid.
+   */
+  com.google.protobuf.ByteString
+      getSidBytes();
+
+  /**
+   * <pre>
+   *TODO: change tid to long
+   * </pre>
+   *
+   * <code>string tid = 5;</code>
    * @return The tid.
    */
   java.lang.String getTid();
   /**
-   * <code>string tid = 2;</code>
+   * <pre>
+   *TODO: change tid to long
+   * </pre>
+   *
+   * <code>string tid = 5;</code>
    * @return The bytes for tid.
    */
   com.google.protobuf.ByteString
       getTidBytes();
 
   /**
-   * <code>bytes data = 3;</code>
+   * <code>bytes data = 6;</code>
    * @return The data.
    */
   com.google.protobuf.ByteString getData();

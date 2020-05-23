@@ -40,9 +40,11 @@ public class TwoPCClient {
   }
   
   /** send command to server. */
-  public String process(String command, String tid, ByteString data) {
+  public String process(String command, String db, String table, String sid, 
+      String tid, ByteString data) {
     System.out.println("Sending command - " + command);
-    TwoPCRequest.Builder requestBuilder = TwoPCRequest.newBuilder().setCommand(command).setTid(tid);
+    TwoPCRequest.Builder requestBuilder = TwoPCRequest.newBuilder().setCommand(command)
+        .setDb(db).setTable(table).setSid(sid).setTid(tid);
     
     requestBuilder = requestBuilder.setData(data);
     

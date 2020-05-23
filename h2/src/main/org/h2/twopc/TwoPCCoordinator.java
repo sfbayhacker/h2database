@@ -63,7 +63,7 @@ public class TwoPCCoordinator {
       System.out.println("rowOp " + op + "; Row : " + row + "; Class is " + row.getClass() + "; newRow: " + newRow);
       List<Row> list = Arrays.asList(new Row[]{row, newRow});
       result = TwoPCCoordinator.getInstance()
-          .sendMessage(dbtx, op, TwoPCUtils.serialize(list));
+          .sendMessage(op, dbName, tableName, String.valueOf(session.getId()), session.getTransactionId().getString(), TwoPCUtils.serialize(list));
     } catch (InterruptedException | ExecutionException | IOException e) {
       // TODO Auto-generated catch block
       System.err.println("Failure sending log message: " + e.getMessage());
@@ -83,7 +83,7 @@ public class TwoPCCoordinator {
     try {
       String dbName = session.getDatabase().getName(); 
       result = TwoPCCoordinator.getInstance()
-          .sendMessage(dbName, "commit", new byte[0]);
+          .sendMessage("commit", dbName, "", String.valueOf(session.getId()), session.getTransactionId().getString(), new byte[0]);
     } catch (InterruptedException | ExecutionException e) {
       // TODO Auto-generated catch block
       System.err.println("Failure sending log message: " + e.getMessage());
@@ -103,7 +103,7 @@ public class TwoPCCoordinator {
     try {
       String dbName = session.getDatabase().getName(); 
       result = TwoPCCoordinator.getInstance()
-          .sendMessage(dbName, "rollback", new byte[0]);
+          .sendMessage("rollback", dbName, "", String.valueOf(session.getId()), session.getTransactionId().getString(), new byte[0]);
     } catch (InterruptedException | ExecutionException e) {
       // TODO Auto-generated catch block
       System.err.println("Failure sending log message: " + e.getMessage());
@@ -118,7 +118,8 @@ public class TwoPCCoordinator {
     return result;
   }
   
-  public boolean sendMessage(final String tid, final String command, final byte[] data)
+  public boolean sendMessage(final String command, final String db, final String table, final String sid, 
+      final String tid, final byte[] data)
       throws InterruptedException, ExecutionException {
     System.out.println(String.format("sendMessage: {%s, %s, %s}", tid, command, data));
     if (tid == null || command == null || cohorts == null) {
@@ -138,7 +139,7 @@ public class TwoPCCoordinator {
         clients.add(client);
         ByteString b = ByteString.copyFrom(data);
         System.out.println("bytestring: " + b);
-        Future<String> result = executors.submit(new CommandRunner(client, command, tid, b));
+        Future<String> result = executors.submit(new CommandRunner(client, command, db, table, sid, tid, b));
         results.add(result);
       }
 
@@ -158,32 +159,32 @@ public class TwoPCCoordinator {
     }
   }
 
-  public boolean terminate(String tid, String command) throws InterruptedException, ExecutionException {
-    if (cohorts == null) {
-      System.err.println();
-      return false;
-    }
-
-    ExecutorService executors = Executors.newFixedThreadPool(cohorts.length);
-    List<Future<String>> results = new ArrayList<>(cohorts.length);
-    // Access a service running on the local machine on port 50051
-    for (String cohort : cohorts) {
-      System.out.println("cohort: " + cohort);
-      TwoPCClient client = buildClient(cohort);
-      Future<String> result = executors.submit(new CommandRunner(client, command, tid, null));
-      results.add(result);
-    }
-
-    executors.awaitTermination(200, TimeUnit.MILLISECONDS);
-
-    for (Future<String> result : results) {
-      if (!result.isDone() || !"ACK".equalsIgnoreCase(result.get())) {
-        return false;
-      }
-    }
-
-    return true;
-  }
+//  public boolean terminate(String tid, String command) throws InterruptedException, ExecutionException {
+//    if (cohorts == null) {
+//      System.err.println();
+//      return false;
+//    }
+//
+//    ExecutorService executors = Executors.newFixedThreadPool(cohorts.length);
+//    List<Future<String>> results = new ArrayList<>(cohorts.length);
+//    // Access a service running on the local machine on port 50051
+//    for (String cohort : cohorts) {
+//      System.out.println("cohort: " + cohort);
+//      TwoPCClient client = buildClient(cohort);
+//      Future<String> result = executors.submit(new CommandRunner(client, command, tid, null));
+//      results.add(result);
+//    }
+//
+//    executors.awaitTermination(200, TimeUnit.MILLISECONDS);
+//
+//    for (Future<String> result : results) {
+//      if (!result.isDone() || !"ACK".equalsIgnoreCase(result.get())) {
+//        return false;
+//      }
+//    }
+//
+//    return true;
+//  }
 
   private TwoPCClient buildClient(String cohort) throws InterruptedException {
     // Create a communication channel to the server, known as a Channel. Channels
@@ -240,12 +241,19 @@ public class TwoPCCoordinator {
 
     private TwoPCClient client;
     private String command;
+    private String db;
+    private String table;
+    private String sid;
     private String tid;
     private ByteString data;
 
-    public CommandRunner(TwoPCClient client, String command, String tid, ByteString data) {
+    public CommandRunner(TwoPCClient client, String command, String db, String table, String sid,  
+        String tid, ByteString data) {
       this.client = client;
       this.command = command;
+      this.db = db;
+      this.table = table;
+      this.sid = sid;
       this.tid = tid;
       this.data = data;
     }
@@ -253,7 +261,7 @@ public class TwoPCCoordinator {
     @Override
     public String call() throws Exception {
       System.out.println("Calling..");
-      return client.process(command, tid, data);
+      return client.process(command, db, table, sid, tid, data);
     }
 
   }
@@ -263,6 +271,6 @@ public class TwoPCCoordinator {
    * use in the greeting. The second argument is the target server.
    */
   public static void main(String[] args) throws Exception {
-    TwoPCCoordinator.getInstance().sendMessage("001", "PREPARE", TwoPCUtils.serialize("key=value"));
+    TwoPCCoordinator.getInstance().sendMessage("PREPARE", "test", "MAP", "0", "001", TwoPCUtils.serialize("key=value"));
   }
 }

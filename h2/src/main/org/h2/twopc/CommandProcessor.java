@@ -2,6 +2,8 @@ package org.h2.twopc;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.h2.engine.ConnectionInfo;
 import org.h2.engine.Database;
@@ -19,13 +21,15 @@ import io.grpc.stub.StreamObserver;
 
 public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplBase {
 
-  private Session session;
-
+  private Map<String, Session> sessionMap;
+  
   private static class InstanceHolder {
     private static CommandProcessor INSTANCE = new CommandProcessor();
   }
   
-  private CommandProcessor() {}
+  private CommandProcessor() {
+    sessionMap = new ConcurrentHashMap<>();
+  }
   
   public static CommandProcessor getInstance() {
     return InstanceHolder.INSTANCE;
@@ -34,30 +38,31 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
   @Override
   public void processCommand(TwoPCRequest request, StreamObserver<TwoPCResponse> responseObserver) {
     // TODO Auto-generated method stub
-    String command = request.getCommand();
-    System.out.println("Command       : " + command);
+
     TwoPCResponse.Builder response = TwoPCResponse.newBuilder();
 
+    String command = request.getCommand();
+    System.out.println(String.format("Command       : [%s]", command));
+    String db = request.getDb();
+    System.out.println(String.format("DB            : [%s]", db));
+    String t = request.getTable();
+    System.out.println(String.format("T             : [%s]", t));
+    String sid = request.getSid();
+    System.out.println(String.format("SID           : [%s]", sid));    
+
+    System.out.println("Received data : " + request.getData());
+    
     switch (command.toLowerCase()) {
       case "addrow":
       case "removerow": 
       case "updaterow": {
-        // sending dbname-tablename for now as tid
-        String dbtx = request.getTid();
-  
-        String db = dbtx == null ? "" : dbtx.substring(0, dbtx.indexOf('-'));
-        String t = dbtx == null ? "" : dbtx.substring(dbtx.indexOf('-') + 1);
-        System.out.println("DB            : " + db);
-        System.out.println("T             : " + t);
-        System.out.println("Received data : " + request.getData());
-  
         boolean hasError = false;
   
         try {
-	  List<Row> list = (List<Row>)TwoPCUtils.deserialize(request.getData().toByteArray());
+          List<Row> list = (List<Row>)TwoPCUtils.deserialize(request.getData().toByteArray());
           Row row = list.get(0);
           Row newRow = list.get(1);
-          rowOp(row, newRow, t, db, command);
+          rowOp(row, newRow, t, db, command, sid);
         } catch (ClassNotFoundException | IOException e) {
           System.err.println("Error while de-serializing row: " + e.getMessage());
           hasError = true;
@@ -71,12 +76,12 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
         break;
       }
       case "commit": {
-        commit();
+        commit(sid);
         response.setReply("OK");
         break;
       }
       case "rollback": {
-        rollback();
+        rollback(sid);
         response.setReply("OK");
         break;
       }
@@ -89,16 +94,9 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
           if (!request.getData().isEmpty()) {
   //          String xml = new String(request.getData().toByteArray(), "UTF-8");
   //          Record logRecord = TwoPCUtils.fromXML(xml, Record.class);
-            String dbtx = request.getTid();
-            String db = dbtx == null ? "" : dbtx.substring(0, dbtx.indexOf('-'));
-            String tid = dbtx == null ? "" : dbtx.substring(dbtx.indexOf('-') + 1);
-            System.out.println("DB            : " + db);
-            System.out.println("TID           : " + tid);
-            System.out.println("Received data : " + request.getData());
-  
             Record<?, ?> logRecord = (Record<?, ?>) TwoPCUtils.deserialize(request.getData().toByteArray());
             System.out.println("Record        : " + logRecord);
-            log(db, tid, logRecord);
+            log(db, request.getTid(), logRecord);
           }
         } catch (Exception e) {
           // TODO Auto-generated catch block
@@ -118,9 +116,13 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
     responseObserver.onCompleted();
   }
 
-  private void rowOp(Row row, Row newRow,  String t, String db, String op) {
+  private void rowOp(Row row, Row newRow, String t, String db, String op, String sid) {
+    Session session = sessionMap.get(sid);
     if (session == null || session.isClosed()) {
-      session = createSession();
+      session = sessionMap.putIfAbsent(sid, createSession());
+      if (session == null) {
+        session = sessionMap.get(sid); 
+      }
     }
 
     Database d = session.getDatabase();
@@ -146,7 +148,8 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
 //    session.close();
   }
 
-  private void commit() {
+  private void commit(String sid) {
+    Session session = sessionMap.get(sid);
     if (session == null || session.isClosed()) {
       // Nothing to commit
       System.out.println("Nothing to commit!");
@@ -155,9 +158,11 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
 
     session.commit(false, true);
     session.close();
+    sessionMap.remove(sid);
   }
 
-  private void rollback() {
+  private void rollback(String sid) {
+    Session session = sessionMap.get(sid);
     if (session == null || session.isClosed()) {
       // Nothing to rollback
       System.out.println("Nothing to rollback!");
@@ -166,6 +171,7 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
 
     session.rollback(true);
     session.close();
+    sessionMap.remove(sid);
   }
 
   private static Session createSession() {
