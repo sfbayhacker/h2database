@@ -59,11 +59,11 @@ public class TwoPCCoordinator {
     boolean result = false;
     try {
       String dbName = session.getDatabase().getName(); 
-      String dbtx = dbName + "-" + tableName;
+      String tid = session.getTransactionId().getString();
       System.out.println("rowOp " + op + "; Row : " + row + "; Class is " + row.getClass() + "; newRow: " + newRow);
       List<Row> list = Arrays.asList(new Row[]{row, newRow});
       result = TwoPCCoordinator.getInstance()
-          .sendMessage(op, dbName, tableName, String.valueOf(session.getId()), session.getTransactionId().getString(), TwoPCUtils.serialize(list));
+          .sendMessage(op, dbName, tableName, String.valueOf(session.getId()), tid==null?"":tid, TwoPCUtils.serialize(list));
     } catch (InterruptedException | ExecutionException | IOException e) {
       // TODO Auto-generated catch block
       System.err.println("Failure sending log message: " + e.getMessage());
@@ -81,9 +81,10 @@ public class TwoPCCoordinator {
   public boolean commit(Session session) {
     boolean result = false;
     try {
-      String dbName = session.getDatabase().getName(); 
+      String dbName = session.getDatabase().getName();
+      String tid = session.getTransactionId().getString();
       result = TwoPCCoordinator.getInstance()
-          .sendMessage("commit", dbName, "", String.valueOf(session.getId()), session.getTransactionId().getString(), new byte[0]);
+          .sendMessage("commit", dbName, "", String.valueOf(session.getId()), tid==null?"":tid, new byte[0]);
     } catch (InterruptedException | ExecutionException e) {
       // TODO Auto-generated catch block
       System.err.println("Failure sending log message: " + e.getMessage());
@@ -101,9 +102,10 @@ public class TwoPCCoordinator {
   public boolean rollback(Session session) {
     boolean result = false;
     try {
-      String dbName = session.getDatabase().getName(); 
+      String dbName = session.getDatabase().getName();
+      String tid = session.getTransactionId().getString();
       result = TwoPCCoordinator.getInstance()
-          .sendMessage("rollback", dbName, "", String.valueOf(session.getId()), session.getTransactionId().getString(), new byte[0]);
+          .sendMessage("rollback", dbName, "", String.valueOf(session.getId()), tid==null?"":tid, new byte[0]);
     } catch (InterruptedException | ExecutionException e) {
       // TODO Auto-generated catch block
       System.err.println("Failure sending log message: " + e.getMessage());
@@ -121,9 +123,9 @@ public class TwoPCCoordinator {
   public boolean sendMessage(final String command, final String db, final String table, final String sid, 
       final String tid, final byte[] data)
       throws InterruptedException, ExecutionException {
-    System.out.println(String.format("sendMessage: {%s, %s, %s}", tid, command, data));
-    if (tid == null || command == null || cohorts == null) {
-      System.err.println(String.format("Unable to send message: {%s, %s, %s}", tid, command, data.toString()));
+    System.out.println(String.format("sendMessage: {%s, %s, %s, %s, %s, %s}", command, db, table, sid, tid, data));
+    if (command == null || cohorts == null) {
+      System.err.println(String.format("Unable to send message: {%s, %s}", command, data.toString()));
       return false;
     }
 

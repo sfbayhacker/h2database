@@ -836,7 +836,7 @@ public class Session extends SessionWithState implements TransactionStore.Rollba
     public void rollback(boolean grpc) {
       System.out.println("Session::rollback()");
       
-      Thread.dumpStack();
+//      Thread.dumpStack();
       
       if (!grpc && TwoPCCoordinator.getInstance().isClustered() && "sa".equalsIgnoreCase(getUser().getName())) {
         boolean result = TwoPCCoordinator.getInstance().rollback(this);
