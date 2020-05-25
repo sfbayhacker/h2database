@@ -91,7 +91,7 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
       }
       case "rollback": {
 //        rollback(sid);
-        DataManager.getInstance().abort(new HTimestamp(hid, tid));
+        DataManager.getInstance().rollback(new HTimestamp(hid, tid));
         response.setReply("OK");
         break;
       }
@@ -131,11 +131,11 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
     }
 
     if (op.equalsIgnoreCase("addRow")) {
-        ((MVTable) tables.get(0)).addRow(session, row, true);
+        ((MVTable) tables.get(0)).addRow(session, row, true, false);
     } else if (op.equalsIgnoreCase("removeRow")) {
-        ((MVTable) tables.get(0)).removeRow(session, row, true);
+        ((MVTable) tables.get(0)).removeRow(session, row, true, false);
     } else if (op.equalsIgnoreCase("updateRow")) {
-        ((MVTable) tables.get(0)).updateRow(session, row, newRow, true);
+        ((MVTable) tables.get(0)).updateRow(session, row, newRow, true, false);
     }
 //    session.commit(false);
 //    session.close();

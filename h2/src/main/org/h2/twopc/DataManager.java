@@ -38,7 +38,7 @@ public class DataManager {
     return InstanceHolder.INSTANCE;
   }
   
-  boolean prewrite(RowOp data, HTimestamp ts) {
+  public boolean prewrite(RowOp data, HTimestamp ts) {
     Prewrite pw = new Prewrite(data, ts);
     HTimestamp wtm = wtmMap.getOrDefault(pw.key, new HTimestamp(ts.hid, Long.MIN_VALUE));
     if (ts.compareTo(wtm) < 0) return false;
@@ -51,7 +51,7 @@ public class DataManager {
     return true;
   }
   
-  void commit(HTimestamp ts) {
+  public void commit(HTimestamp ts) {
     Set<Prewrite> txPrewrites = txMap.get(ts);
     if (txPrewrites == null || txPrewrites.size() == 0) {
       return;
@@ -71,7 +71,7 @@ public class DataManager {
     }
   }
   
-  void checkAndWrite(Prewrite pw, long minTS, List<Prewrite> toRemove) {
+  private void checkAndWrite(Prewrite pw, long minTS, List<Prewrite> toRemove) {
     boolean result = write(pw);
     
     if (result) {
@@ -96,21 +96,23 @@ public class DataManager {
     }
   }
   
-  boolean write(Prewrite pw) {
+  private boolean write(Prewrite pw) {
     rMap.computeIfAbsent(pw.key, k -> new PriorityQueue<>());
     HTimestamp rMinTS = rMap.get(pw.key).peek();
     if (rMinTS == null || rMinTS.compareTo(pw.timestamp) >= 0) {
       Row row = pw.data.rows.get(0);
       Row newRow = pw.data.rows.get(1);
       CommandProcessor.getInstance().rowOp(row, newRow, "", "", pw.data.command, pw.data.sid);
+      wtmMap.put(pw.key, pw.timestamp);
       return true;
     }
     
     return false;
   }
   
-  void abort(HTimestamp ts) {
-    
+  public void rollback(HTimestamp ts) {
+    //TODO
+    System.out.println("Rollback not implemented yet!");
   }
   
   private class PrewriteComparator implements Comparator<Prewrite> {

@@ -5,10 +5,8 @@
  */
 package org.h2.mvstore.db;
 
-import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -37,7 +35,6 @@ import org.h2.table.Column;
 import org.h2.table.IndexColumn;
 import org.h2.table.RegularTable;
 import org.h2.twopc.TwoPCCoordinator;
-import org.h2.twopc.TwoPCUtils;
 import org.h2.util.DebuggingThreadLocal;
 import org.h2.util.MathUtils;
 import org.h2.util.Utils;
@@ -485,26 +482,29 @@ public class MVTable extends RegularTable {
 
     @Override
     public void removeRow(Session session, Row row) {
-        removeRow(session, row, false);
+        removeRow(session, row, false, true);
     }
 
-    public void removeRow(Session session, Row row, boolean grpc) {
+    public void removeRow(Session session, Row row, boolean grpc, boolean prewrite) {
 
         syncLastModificationIdWithDatabase();
         Transaction t = session.getTransaction();
         long savepoint = t.setSavepoint();
 
-        if (!grpc && TwoPCCoordinator.getInstance().isClustered()
-            && "map".equalsIgnoreCase(getName()) && "sa".equalsIgnoreCase(session.getUser().getName())) {
-          boolean result = TwoPCCoordinator.getInstance().rowOp(session, getName(), row, null, "removerow");
-          //if members cannot process instruction, rollback txn and return
-          if (!result) {
-            System.err.println("removeRow failed! Starting rollback..");
-            session.rollback(grpc);
-            return;
+        if (TwoPCCoordinator.getInstance().isClustered()) {
+          if (!grpc && "map".equalsIgnoreCase(getName()) && "sa".equalsIgnoreCase(session.getUser().getName())) {
+            boolean result = TwoPCCoordinator.getInstance().rowOp(session, getName(), row, null, "removerow");
+            //if members cannot process instruction, rollback txn and return
+            if (!result) {
+              System.err.println("removeRow failed! Starting rollback..");
+              session.rollback(grpc);
+              return;
+            }
           }
-        }
 
+          if (prewrite) return;          
+        }
+        
         try {
             for (int i = indexes.size() - 1; i >= 0; i--) {
                 Index index = indexes.get(i);
@@ -535,26 +535,29 @@ public class MVTable extends RegularTable {
 
     @Override
     public void addRow(Session session, Row row) {
-      addRow(session, row, false);
+      addRow(session, row, false, true);
     }
 
-    public void addRow(Session session, Row row, boolean grpc) {
+    public void addRow(Session session, Row row, boolean grpc, boolean prewrite) {
       syncLastModificationIdWithDatabase();
 
       Transaction t = session.getTransaction();
       long savepoint = t.setSavepoint();
 
-      if (!grpc && TwoPCCoordinator.getInstance().isClustered() 
-          && "map".equalsIgnoreCase(getName()) && "sa".equalsIgnoreCase(session.getUser().getName())) {
-        boolean result = TwoPCCoordinator.getInstance().rowOp(session, getName(), row, null, "addrow");
-        //if members cannot process instruction, rollback txn and return
-        if (!result) {
-          System.err.println("addRow failed! Starting rollback..");
-          session.rollback(grpc);
-          return;
+      if (TwoPCCoordinator.getInstance().isClustered()) {
+        if (!grpc && "map".equalsIgnoreCase(getName()) && "sa".equalsIgnoreCase(session.getUser().getName())) {
+          boolean result = TwoPCCoordinator.getInstance().rowOp(session, getName(), row, null, "addrow");
+          //if members cannot process instruction, rollback txn and return
+          if (!result) {
+            System.err.println("addRow failed! Starting rollback..");
+            session.rollback(grpc);
+            return;
+          }
         }
+  
+        if (prewrite) return;
       }
-
+      
       try {
           for (Index index : indexes) {
               index.add(session, row);
@@ -572,27 +575,30 @@ public class MVTable extends RegularTable {
     
     @Override
     public void updateRow(Session session, Row oldRow, Row newRow) {
-    	updateRow(session, oldRow, newRow, false);
+    	updateRow(session, oldRow, newRow, false, true);
     }
 
-    public void updateRow(Session session, Row oldRow, Row newRow, boolean grpc) {
+    public void updateRow(Session session, Row oldRow, Row newRow, boolean grpc, boolean prewrite) {
 
         newRow.setKey(oldRow.getKey());
         syncLastModificationIdWithDatabase();
         Transaction t = session.getTransaction();
         long savepoint = t.setSavepoint();
 
-        if (!grpc && TwoPCCoordinator.getInstance().isClustered()
-            && "map".equalsIgnoreCase(getName()) && "sa".equalsIgnoreCase(session.getUser().getName())) {
-          boolean result = TwoPCCoordinator.getInstance().rowOp(session, getName(), oldRow, newRow, "updaterow");
-          //if members cannot process instruction, rollback txn and return
-          if (!result) {
-            System.err.println("removeRow failed! Starting rollback..");
-            session.rollback(grpc);
-            return;
+        if (TwoPCCoordinator.getInstance().isClustered()) {
+          if (!grpc && "map".equalsIgnoreCase(getName()) && "sa".equalsIgnoreCase(session.getUser().getName())) {
+            boolean result = TwoPCCoordinator.getInstance().rowOp(session, getName(), oldRow, newRow, "updaterow");
+            //if members cannot process instruction, rollback txn and return
+            if (!result) {
+              System.err.println("removeRow failed! Starting rollback..");
+              session.rollback(grpc);
+              return;
+            }
           }
+  
+          if (prewrite) return;
         }
-
+        
         try {
             for (Index index : indexes) {
                 index.update(session, oldRow, newRow);

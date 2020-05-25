@@ -58,12 +58,22 @@ public class TwoPCCoordinator {
   public boolean rowOp(Session session, String tableName, Row row, Row newRow, String op) {
     boolean result = false;
     try {
+      
       String dbName = session.getDatabase().getName();
       long tid = session.getTransaction() == null ? 0L : session.getTransaction().getGlobalId();
       System.out.println("rowOp " + op + "; Row : " + row + "; Class is " + row.getClass() + "; newRow: " + newRow);
       List<Row> list = Arrays.asList(new Row[]{row, newRow});
-      result = TwoPCCoordinator.getInstance()
-          .sendMessage(op, dbName, tableName, String.valueOf(session.getId()), tid, hostId, TwoPCUtils.serialize(list));
+
+      String sid = String.valueOf(session.getId());
+      result = DataManager.getInstance().prewrite(new RowOp(list, op, sid), 
+          new HTimestamp(getHostId(), tid));
+      
+      if (!result) {
+        System.out.println("Local DM rejected prewrite!");
+        return false;
+      }
+      
+      result = sendMessage(op, dbName, tableName, sid, tid, hostId, TwoPCUtils.serialize(list));
     } catch (InterruptedException | ExecutionException | IOException e) {
       // TODO Auto-generated catch block
       System.err.println("Failure sending log message: " + e.getMessage());
@@ -83,6 +93,7 @@ public class TwoPCCoordinator {
     try {
       String dbName = session.getDatabase().getName();
       long tid = session.getTransaction() == null ? 0L : session.getTransaction().getGlobalId();
+      DataManager.getInstance().commit(new HTimestamp(getHostId(), tid));
       result = TwoPCCoordinator.getInstance()
           .sendMessage("commit", dbName, "", String.valueOf(session.getId()), tid, hostId, new byte[0]);
     } catch (InterruptedException | ExecutionException e) {
@@ -104,6 +115,7 @@ public class TwoPCCoordinator {
     try {
       String dbName = session.getDatabase().getName();
       long tid = session.getTransaction() == null ? 0L : session.getTransaction().getGlobalId();
+      DataManager.getInstance().rollback(new HTimestamp(getHostId(), tid));
       result = TwoPCCoordinator.getInstance()
           .sendMessage("rollback", dbName, "", String.valueOf(session.getId()), tid, hostId, new byte[0]);
     } catch (InterruptedException | ExecutionException e) {
