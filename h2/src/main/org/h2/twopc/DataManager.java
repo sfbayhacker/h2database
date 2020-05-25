@@ -52,6 +52,7 @@ public class DataManager {
   }
   
   public void commit(HTimestamp ts) {
+    System.out.println(String.format("commit(%s)", ts.toString()));
     Set<Prewrite> txPrewrites = txMap.get(ts);
     if (txPrewrites == null || txPrewrites.size() == 0) {
       return;
@@ -72,11 +73,14 @@ public class DataManager {
   }
   
   private void checkAndWrite(Prewrite pw, long minTS, List<Prewrite> toRemove) {
+    System.out.println(String.format("checkAndWrite(%s, %s, %s)", pw.toString(), String.valueOf(minTS), toRemove));
     boolean result = write(pw);
     
     if (result) {
       pwMap.get(pw.key).removeIf(e -> e.equals(pw));
-      wMap.get(pw.key).removeIf(e -> e.equals(pw));
+      if (wMap.get(pw.key) != null) {
+        wMap.get(pw.key).removeIf(e -> e.equals(pw));
+      }
       
       Prewrite minP = pwMap.get(pw.key).peek();
       if (minP != null) {

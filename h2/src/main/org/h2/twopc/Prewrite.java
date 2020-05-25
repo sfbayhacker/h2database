@@ -15,10 +15,12 @@ public class Prewrite {
   public Prewrite(RowOp data, HTimestamp timestamp) {
     this.data = data;
     this.key = data.rows.get(0).getValueList()[0].toString();
-    if (data.rows.size() > 1) {
-      this.value = data.rows.get(1).getValueList()[1].toString();
+    if (data.rows.get(1) != null) {
+      System.out.println("value - " + data.rows.get(1).getValue(1));
+      this.value = data.rows.get(1).getValue(1).toString();
     } else {
-      this.value = data.rows.get(0).getValueList()[1].toString();
+      System.out.println("value - " + data.rows.get(0).getValue(1));
+      this.value = data.rows.get(0).getValue(1).toString();
     }
     
     this.timestamp = timestamp;
@@ -53,5 +55,10 @@ public class Prewrite {
     } else if (!timestamp.equals(other.timestamp))
       return false;
     return true;
+  }
+  
+  @Override
+  public String toString() {
+    return "{key: "+key+", value: "+value+", data: "+data+", ts: "+timestamp+"}";
   }
 }

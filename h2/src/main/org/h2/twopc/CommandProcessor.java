@@ -110,6 +110,7 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
   }
 
   void rowOp(Row row, Row newRow, String t, String db, String op, String sid) {
+    System.out.println(String.format("rowOp(%s, %s)", row.toString(), op));
     Session session = sessionMap.get(sid);
     if (session == null || session.isClosed()) {
       session = sessionMap.putIfAbsent(sid, createSession());

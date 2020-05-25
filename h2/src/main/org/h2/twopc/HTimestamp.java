@@ -44,4 +44,9 @@ public class HTimestamp implements Comparable<HTimestamp> {
     
     return result;
   }
+  
+  @Override
+  public String toString() {
+    return "{hid: "+hid+ "; timestamp: "+timestamp+"}";
+  }
 }
