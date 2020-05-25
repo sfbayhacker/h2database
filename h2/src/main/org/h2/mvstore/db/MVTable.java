@@ -558,6 +558,8 @@ public class MVTable extends RegularTable {
         if (prewrite) return;
       }
       
+      System.out.println("adding row - " + row);
+      
       try {
           for (Index index : indexes) {
               index.add(session, row);

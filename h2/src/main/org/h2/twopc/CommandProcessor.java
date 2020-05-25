@@ -85,7 +85,7 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
       }
       case "commit": {
 //        commit(sid);
-        DataManager.getInstance().commit(new HTimestamp(hid, tid));
+        DataManager.getInstance().commit(sid, new HTimestamp(hid, tid));
         response.setReply("OK");
         break;
       }
@@ -138,8 +138,9 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
     } else if (op.equalsIgnoreCase("updateRow")) {
         ((MVTable) tables.get(0)).updateRow(session, row, newRow, true, false);
     }
-//    session.commit(false);
-//    session.close();
+    session.commit(false);
+    session.close();
+    sessionMap.remove(sid);
   }
 
   void commit(String sid) {

@@ -92,8 +92,9 @@ public class TwoPCCoordinator {
     boolean result = false;
     try {
       String dbName = session.getDatabase().getName();
+      String sid = String.valueOf(session.getId());
       long tid = session.getTransaction() == null ? 0L : session.getTransaction().getGlobalId();
-      DataManager.getInstance().commit(new HTimestamp(getHostId(), tid));
+      DataManager.getInstance().commit(sid, new HTimestamp(getHostId(), tid));
       result = TwoPCCoordinator.getInstance()
           .sendMessage("commit", dbName, "", String.valueOf(session.getId()), tid, hostId, new byte[0]);
     } catch (InterruptedException | ExecutionException e) {

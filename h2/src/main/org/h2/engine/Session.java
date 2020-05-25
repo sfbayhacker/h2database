@@ -50,6 +50,7 @@ import org.h2.store.InDoubtTransaction;
 import org.h2.store.LobStorageFrontend;
 import org.h2.table.Table;
 import org.h2.table.TableType;
+import org.h2.twopc.CommandProcessor;
 import org.h2.twopc.TwoPCCoordinator;
 import org.h2.util.DateTimeUtils;
 import org.h2.util.HasSQL;
@@ -683,7 +684,7 @@ public class Session extends SessionWithState implements TransactionStore.Rollba
     }
 
     public void commit(boolean ddl, boolean grpc) {
-      System.out.println("Session::commit()");
+      System.out.println("Session::commit() - " + getId());
       
       if (!grpc && TwoPCCoordinator.getInstance().isClustered() && "sa".equalsIgnoreCase(getUser().getName())) {
         boolean result = TwoPCCoordinator.getInstance().commit(this);

@@ -9,6 +9,7 @@ import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.h2.engine.Session;
 import org.h2.result.Row;
 
 public class DataManager {
@@ -51,7 +52,7 @@ public class DataManager {
     return true;
   }
   
-  public void commit(HTimestamp ts) {
+  public void commit(String sid, HTimestamp ts) {
     System.out.println(String.format("commit(%s)", ts.toString()));
     Set<Prewrite> txPrewrites = txMap.get(ts);
     if (txPrewrites == null || txPrewrites.size() == 0) {
@@ -70,6 +71,8 @@ public class DataManager {
         txMap.remove(pw.timestamp);
       }
     }
+    
+    CommandProcessor.getInstance().commit(sid);
   }
   
   private void checkAndWrite(Prewrite pw, long minTS, List<Prewrite> toRemove) {
@@ -101,6 +104,7 @@ public class DataManager {
   }
   
   private boolean write(Prewrite pw) {
+    System.out.println(String.format("write(%s)", pw.toString()));
     rMap.computeIfAbsent(pw.key, k -> new PriorityQueue<>());
     HTimestamp rMinTS = rMap.get(pw.key).peek();
     if (rMinTS == null || rMinTS.compareTo(pw.timestamp) >= 0) {
