@@ -60,23 +60,19 @@ public interface TwoPCRequestOrBuilder extends
    *TODO: change tid to long
    * </pre>
    *
-   * <code>string tid = 5;</code>
+   * <code>int64 tid = 5;</code>
    * @return The tid.
    */
-  java.lang.String getTid();
-  /**
-   * <pre>
-   *TODO: change tid to long
-   * </pre>
-   *
-   * <code>string tid = 5;</code>
-   * @return The bytes for tid.
-   */
-  com.google.protobuf.ByteString
-      getTidBytes();
+  long getTid();
 
   /**
-   * <code>bytes data = 6;</code>
+   * <code>int32 hid = 6;</code>
+   * @return The hid.
+   */
+  int getHid();
+
+  /**
+   * <code>bytes data = 7;</code>
    * @return The data.
    */
   com.google.protobuf.ByteString getData();

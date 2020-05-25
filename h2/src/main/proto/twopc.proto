@@ -20,8 +20,9 @@ message TwoPCRequest {
   string table = 3;
   string sid = 4;
   //TODO: change tid to long
-  string tid = 5;
-  bytes data = 6;
+  int64 tid = 5;
+  int32 hid = 6;
+  bytes data = 7;
 }
 
 // The response message with reply

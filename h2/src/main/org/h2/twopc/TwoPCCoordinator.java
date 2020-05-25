@@ -25,7 +25,7 @@ import io.grpc.ManagedChannelBuilder;
 public class TwoPCCoordinator {
 
   private String[] cohorts;
-  private String hostId;
+  private int hostId;
   private Properties props;
   private String grpcPort;
   private boolean clustered;
@@ -37,7 +37,7 @@ public class TwoPCCoordinator {
   private TwoPCCoordinator() {
     try {
       props = readProperties();
-      hostId = props.get("hostId") == null ? "0" : props.get("hostId").toString();
+      hostId = props.get("hostId") == null ? 0 : Integer.parseInt(props.get("hostId").toString());
       grpcPort = props.get("grpcPort") == null ? "50051" : props.get("grpcPort").toString();
       Object peers = props.get("peerAddresses");
       if ((clustered = peers != null)) {
@@ -58,12 +58,12 @@ public class TwoPCCoordinator {
   public boolean rowOp(Session session, String tableName, Row row, Row newRow, String op) {
     boolean result = false;
     try {
-      String dbName = session.getDatabase().getName(); 
-      String tid = session.getTransactionId().getString();
+      String dbName = session.getDatabase().getName();
+      long tid = session.getTransaction() == null ? 0L : session.getTransaction().getGlobalId();
       System.out.println("rowOp " + op + "; Row : " + row + "; Class is " + row.getClass() + "; newRow: " + newRow);
       List<Row> list = Arrays.asList(new Row[]{row, newRow});
       result = TwoPCCoordinator.getInstance()
-          .sendMessage(op, dbName, tableName, String.valueOf(session.getId()), tid==null?"":tid, TwoPCUtils.serialize(list));
+          .sendMessage(op, dbName, tableName, String.valueOf(session.getId()), tid, hostId, TwoPCUtils.serialize(list));
     } catch (InterruptedException | ExecutionException | IOException e) {
       // TODO Auto-generated catch block
       System.err.println("Failure sending log message: " + e.getMessage());
@@ -82,9 +82,9 @@ public class TwoPCCoordinator {
     boolean result = false;
     try {
       String dbName = session.getDatabase().getName();
-      String tid = session.getTransactionId().getString();
+      long tid = session.getTransaction() == null ? 0L : session.getTransaction().getGlobalId();
       result = TwoPCCoordinator.getInstance()
-          .sendMessage("commit", dbName, "", String.valueOf(session.getId()), tid==null?"":tid, new byte[0]);
+          .sendMessage("commit", dbName, "", String.valueOf(session.getId()), tid, hostId, new byte[0]);
     } catch (InterruptedException | ExecutionException e) {
       // TODO Auto-generated catch block
       System.err.println("Failure sending log message: " + e.getMessage());
@@ -103,9 +103,9 @@ public class TwoPCCoordinator {
     boolean result = false;
     try {
       String dbName = session.getDatabase().getName();
-      String tid = session.getTransactionId().getString();
+      long tid = session.getTransaction() == null ? 0L : session.getTransaction().getGlobalId();
       result = TwoPCCoordinator.getInstance()
-          .sendMessage("rollback", dbName, "", String.valueOf(session.getId()), tid==null?"":tid, new byte[0]);
+          .sendMessage("rollback", dbName, "", String.valueOf(session.getId()), tid, hostId, new byte[0]);
     } catch (InterruptedException | ExecutionException e) {
       // TODO Auto-generated catch block
       System.err.println("Failure sending log message: " + e.getMessage());
@@ -121,9 +121,9 @@ public class TwoPCCoordinator {
   }
   
   public boolean sendMessage(final String command, final String db, final String table, final String sid, 
-      final String tid, final byte[] data)
+      final long tid, final int hid, final byte[] data)
       throws InterruptedException, ExecutionException {
-    System.out.println(String.format("sendMessage: {%s, %s, %s, %s, %s, %s}", command, db, table, sid, tid, data));
+    System.out.println(String.format("sendMessage: {command=%s, db=%s, table=%s, sid=%s, tid=%d, hid=%d, data=%s}", command, db, table, sid, tid, hid, data));
     if (command == null || cohorts == null) {
       System.err.println(String.format("Unable to send message: {%s, %s}", command, data.toString()));
       return false;
@@ -141,7 +141,7 @@ public class TwoPCCoordinator {
         clients.add(client);
         ByteString b = ByteString.copyFrom(data);
         System.out.println("bytestring: " + b);
-        Future<String> result = executors.submit(new CommandRunner(client, command, db, table, sid, tid, b));
+        Future<String> result = executors.submit(new CommandRunner(client, command, db, table, sid, tid, hid, b));
         results.add(result);
       }
 
@@ -227,7 +227,7 @@ public class TwoPCCoordinator {
     return cohorts;
   }
 
-  public String getHostId() {
+  public int getHostId() {
     return hostId;
   }
 
@@ -246,24 +246,26 @@ public class TwoPCCoordinator {
     private String db;
     private String table;
     private String sid;
-    private String tid;
+    private long tid;
+    private int hid;
     private ByteString data;
 
     public CommandRunner(TwoPCClient client, String command, String db, String table, String sid,  
-        String tid, ByteString data) {
+        long tid, int hid, ByteString data) {
       this.client = client;
       this.command = command;
       this.db = db;
       this.table = table;
       this.sid = sid;
       this.tid = tid;
+      this.hid = hid;
       this.data = data;
     }
 
     @Override
     public String call() throws Exception {
       System.out.println("Calling..");
-      return client.process(command, db, table, sid, tid, data);
+      return client.process(command, db, table, sid, tid, hid, data);
     }
 
   }
@@ -273,6 +275,6 @@ public class TwoPCCoordinator {
    * use in the greeting. The second argument is the target server.
    */
   public static void main(String[] args) throws Exception {
-    TwoPCCoordinator.getInstance().sendMessage("PREPARE", "test", "MAP", "0", "001", TwoPCUtils.serialize("key=value"));
+    TwoPCCoordinator.getInstance().sendMessage("PREPARE", "test", "MAP", "0", 0L, 0, TwoPCUtils.serialize("key=value"));
   }
 }

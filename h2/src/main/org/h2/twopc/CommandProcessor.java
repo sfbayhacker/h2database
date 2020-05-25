@@ -49,7 +49,11 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
     System.out.println(String.format("T             : [%s]", t));
     String sid = request.getSid();
     System.out.println(String.format("SID           : [%s]", sid));    
-
+    long tid = request.getTid();
+    System.out.println(String.format("TID           : [%d]", tid));
+    int hid = request.getHid();
+    System.out.println(String.format("HID           : [%d]", hid));
+    
     System.out.println("Received data : " + request.getData());
     
     switch (command.toLowerCase()) {
@@ -57,52 +61,41 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
       case "removerow": 
       case "updaterow": {
         boolean hasError = false;
-  
+        boolean result = false;
         try {
           List<Row> list = (List<Row>)TwoPCUtils.deserialize(request.getData().toByteArray());
-          Row row = list.get(0);
-          Row newRow = list.get(1);
-          rowOp(row, newRow, t, db, command, sid);
+//        Row row = list.get(0);
+//        Row newRow = list.get(1);
+          RowOp rowOp = new RowOp(list, command, sid);
+          HTimestamp ts = new HTimestamp(hid, tid);
+          result = DataManager.getInstance().prewrite(rowOp, ts);
+//        rowOp(row, newRow, t, db, command, sid);
         } catch (ClassNotFoundException | IOException e) {
           System.err.println("Error while de-serializing row: " + e.getMessage());
           hasError = true;
         }
   
-        if (hasError) {
+        if (hasError || !result) {
           response.setReply("ERROR");
         } else {
           response.setReply("OK");
         }
+        
         break;
       }
       case "commit": {
-        commit(sid);
+//        commit(sid);
+        DataManager.getInstance().commit(new HTimestamp(hid, tid));
         response.setReply("OK");
         break;
       }
       case "rollback": {
-        rollback(sid);
+//        rollback(sid);
+        DataManager.getInstance().abort(new HTimestamp(hid, tid));
         response.setReply("OK");
         break;
       }
       case "prepare": {
-        response.setReply("OK");
-        break;
-      }
-      case "log": {
-        try {
-          if (!request.getData().isEmpty()) {
-  //          String xml = new String(request.getData().toByteArray(), "UTF-8");
-  //          Record logRecord = TwoPCUtils.fromXML(xml, Record.class);
-            Record<?, ?> logRecord = (Record<?, ?>) TwoPCUtils.deserialize(request.getData().toByteArray());
-            System.out.println("Record        : " + logRecord);
-            log(db, request.getTid(), logRecord);
-          }
-        } catch (Exception e) {
-          // TODO Auto-generated catch block
-          System.err.println("Unable to de-serialize log record: " + e.getMessage());
-          e.printStackTrace();
-        }
         response.setReply("OK");
         break;
       }
@@ -116,7 +109,7 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
     responseObserver.onCompleted();
   }
 
-  private void rowOp(Row row, Row newRow, String t, String db, String op, String sid) {
+  void rowOp(Row row, Row newRow, String t, String db, String op, String sid) {
     Session session = sessionMap.get(sid);
     if (session == null || session.isClosed()) {
       session = sessionMap.putIfAbsent(sid, createSession());
@@ -148,7 +141,7 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
 //    session.close();
   }
 
-  private void commit(String sid) {
+  void commit(String sid) {
     Session session = sessionMap.get(sid);
     if (session == null || session.isClosed()) {
       // Nothing to commit
@@ -161,7 +154,7 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
     sessionMap.remove(sid);
   }
 
-  private void rollback(String sid) {
+  void rollback(String sid) {
     Session session = sessionMap.get(sid);
     if (session == null || session.isClosed()) {
       // Nothing to rollback
@@ -174,33 +167,13 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
     sessionMap.remove(sid);
   }
 
-  private static Session createSession() {
+  private Session createSession() {
     // TODO: user to be part of message
     ConnectionInfo ci = new ConnectionInfo("~/test");
     ci.setUserName("SA");
     ci.setUserPasswordHash(SHA256.getKeyPasswordHash("SA", new char[0]));
     ci.setProperty("WRITE_DELAY", "0");
     return Engine.getInstance().createSession(ci);
-  }
-
-  private void log(String dbName, String tid, Record<?, ?> logRecord) {
-    System.out.println("engine: " + Engine.getInstance());
-    System.out.println("db: " + Engine.getInstance().getDatabase(dbName));
-    System.out.println("store: " + Engine.getInstance().getDatabase(dbName).getStore());
-    System.out.println("ts: " + Engine.getInstance().getDatabase(dbName).getStore().getTransactionStore());
-    TransactionStore ts = Engine.getInstance().getDatabase(dbName).getStore().getTransactionStore();
-
-    int txId = Integer.parseInt(tid);
-
-    Transaction t = ts.getTransaction(txId);
-    if (t == null) {
-      t = ts.begin(txId);
-    }
-
-    long l = t.log(logRecord);
-    System.out.println("result: " + l);
-
-    t.commit();
   }
 
 }
