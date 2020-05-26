@@ -52,7 +52,7 @@ public class DataManager {
     return true;
   }
   
-  public void commit(String sid, HTimestamp ts) {
+  public void commit(String remoteSid, Session localSession, HTimestamp ts) {
     System.out.println(String.format("commit(%s)", ts.toString()));
     Set<Prewrite> txPrewrites = txMap.get(ts);
     if (txPrewrites == null || txPrewrites.size() == 0) {
@@ -72,7 +72,7 @@ public class DataManager {
       }
     }
     
-    CommandProcessor.getInstance().commit(sid);
+    CommandProcessor.getInstance().commit(remoteSid, localSession);
   }
   
   private void checkAndWrite(Prewrite pw, long minTS, List<Prewrite> toRemove) {
@@ -110,7 +110,8 @@ public class DataManager {
     if (rMinTS == null || rMinTS.compareTo(pw.timestamp) >= 0) {
       Row row = pw.data.rows.get(0);
       Row newRow = pw.data.rows.get(1);
-      CommandProcessor.getInstance().rowOp(row, newRow, "", "", pw.data.command, pw.data.sid);
+      CommandProcessor.getInstance().rowOp(row, newRow, "", "", 
+          pw.data.command, pw.data.remoteSid, pw.data.localSession);
       wtmMap.put(pw.key, pw.timestamp);
       return true;
     }

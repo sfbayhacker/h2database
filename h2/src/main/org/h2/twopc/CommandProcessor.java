@@ -10,9 +10,6 @@ import org.h2.engine.Database;
 import org.h2.engine.Engine;
 import org.h2.engine.Session;
 import org.h2.mvstore.db.MVTable;
-import org.h2.mvstore.tx.Record;
-import org.h2.mvstore.tx.Transaction;
-import org.h2.mvstore.tx.TransactionStore;
 import org.h2.result.Row;
 import org.h2.security.SHA256;
 import org.h2.table.Table;
@@ -66,7 +63,7 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
           List<Row> list = (List<Row>)TwoPCUtils.deserialize(request.getData().toByteArray());
 //        Row row = list.get(0);
 //        Row newRow = list.get(1);
-          RowOp rowOp = new RowOp(list, command, sid);
+          RowOp rowOp = new RowOp(list, command, sid, null);
           HTimestamp ts = new HTimestamp(hid, tid);
           result = DataManager.getInstance().prewrite(rowOp, ts);
 //        rowOp(row, newRow, t, db, command, sid);
@@ -85,7 +82,7 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
       }
       case "commit": {
 //        commit(sid);
-        DataManager.getInstance().commit(sid, new HTimestamp(hid, tid));
+        DataManager.getInstance().commit(sid, null, new HTimestamp(hid, tid));
         response.setReply("OK");
         break;
       }
@@ -109,14 +106,20 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
     responseObserver.onCompleted();
   }
 
-  void rowOp(Row row, Row newRow, String t, String db, String op, String sid) {
+  void rowOp(Row row, Row newRow, String t, String db, String op, String sid, Session localSession) {
     System.out.println(String.format("rowOp(%s, %s)", row.toString(), op));
-    Session session = sessionMap.get(sid);
-    if (session == null || session.isClosed()) {
-      session = sessionMap.putIfAbsent(sid, createSession());
-      if (session == null) {
-        session = sessionMap.get(sid); 
-      }
+    Session session = null;
+    
+    if (localSession != null) {
+      session = localSession;
+    } else {
+      session = sessionMap.get(sid);
+      if (session == null || session.isClosed()) {
+        session = sessionMap.putIfAbsent(sid, createSession());
+        if (session == null) {
+          session = sessionMap.get(sid); 
+        }
+      }      
     }
 
     Database d = session.getDatabase();
@@ -138,35 +141,50 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
     } else if (op.equalsIgnoreCase("updateRow")) {
         ((MVTable) tables.get(0)).updateRow(session, row, newRow, true, false);
     }
-    session.commit(false);
-    session.close();
-    sessionMap.remove(sid);
+//    session.commit(false);
+//    session.close();
+//    sessionMap.remove(sid);
   }
 
-  void commit(String sid) {
-    Session session = sessionMap.get(sid);
-    if (session == null || session.isClosed()) {
-      // Nothing to commit
-      System.out.println("Nothing to commit!");
-      return;
+  void commit(String sid, Session localSession) {
+    Session session = null;
+    
+    if (localSession != null) {
+      session = localSession;
+      session.commit(false, true);
+    } else {
+      session = sessionMap.get(sid);
+      if (session == null || session.isClosed()) {
+        // Nothing to commit
+        System.out.println("Nothing to commit!");
+        return;
+      }
+      session.commit(false, true);
+      //for sessions created by followers, clean up session objects
+      session.close();
+      sessionMap.remove(sid);
     }
-
-    session.commit(false, true);
-    session.close();
-    sessionMap.remove(sid);
   }
 
-  void rollback(String sid) {
-    Session session = sessionMap.get(sid);
-    if (session == null || session.isClosed()) {
-      // Nothing to rollback
-      System.out.println("Nothing to rollback!");
-      return;
-    }
+  void rollback(String sid, Session localSession) {
+    Session session = null;
+     
+    if (localSession != null) {
+      session = localSession;
+      session.rollback(true);
+    } else {
+      session = sessionMap.get(sid);
+      if (session == null || session.isClosed()) {
+        // Nothing to rollback
+        System.out.println("Nothing to rollback!");
+        return;
+      }
 
-    session.rollback(true);
-    session.close();
-    sessionMap.remove(sid);
+      session.rollback(true);
+      //for sessions created by followers, clean up session objects
+      session.close();
+      sessionMap.remove(sid);      
+    }
   }
 
   private Session createSession() {
@@ -177,5 +195,4 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
     ci.setProperty("WRITE_DELAY", "0");
     return Engine.getInstance().createSession(ci);
   }
-
 }

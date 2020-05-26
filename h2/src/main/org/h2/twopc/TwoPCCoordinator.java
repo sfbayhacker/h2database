@@ -65,7 +65,7 @@ public class TwoPCCoordinator {
       List<Row> list = Arrays.asList(new Row[]{row, newRow});
 
       String sid = String.valueOf(session.getId());
-      result = DataManager.getInstance().prewrite(new RowOp(list, op, sid), 
+      result = DataManager.getInstance().prewrite(new RowOp(list, op, sid, session), 
           new HTimestamp(getHostId(), tid));
       
       if (!result) {
@@ -94,7 +94,7 @@ public class TwoPCCoordinator {
       String dbName = session.getDatabase().getName();
       String sid = String.valueOf(session.getId());
       long tid = session.getTransaction() == null ? 0L : session.getTransaction().getGlobalId();
-      DataManager.getInstance().commit(sid, new HTimestamp(getHostId(), tid));
+      DataManager.getInstance().commit(sid, session, new HTimestamp(getHostId(), tid));
       result = TwoPCCoordinator.getInstance()
           .sendMessage("commit", dbName, "", String.valueOf(session.getId()), tid, hostId, new byte[0]);
     } catch (InterruptedException | ExecutionException e) {
