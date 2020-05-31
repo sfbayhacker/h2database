@@ -82,7 +82,7 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
       }
       case "commit": {
 //        commit(sid);
-        DataManager.getInstance().commit(sid, null, new HTimestamp(hid, tid));
+        DataManager.getInstance().commit(sid, null, new HTimestamp(hid, tid), true);
         response.setReply("OK");
         break;
       }

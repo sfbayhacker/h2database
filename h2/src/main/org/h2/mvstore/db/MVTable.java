@@ -312,6 +312,7 @@ public class MVTable extends RegularTable {
 
     @Override
     public Row getRow(Session session, long key) {
+      System.out.println("getRow:: long key: " + key);
         return primaryIndex.getRow(session, key);
     }
 
@@ -502,6 +503,7 @@ public class MVTable extends RegularTable {
             }
           }
 
+          //if replica and prewrite, do not add to index yet
           if (prewrite) return;          
         }
         
@@ -555,6 +557,7 @@ public class MVTable extends RegularTable {
           }
         }
   
+        //if replica and prewrite, do not add to index yet
         if (prewrite) return;
       }
       
@@ -598,6 +601,7 @@ public class MVTable extends RegularTable {
             }
           }
   
+          //if replica and prewrite, do not add to index yet
           if (prewrite) return;
         }
         

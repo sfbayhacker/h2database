@@ -2,9 +2,9 @@ package org.h2.twopc;
 
 public class Prewrite {
   final String key;
-  final String value;
   final RowOp data;
   final HTimestamp timestamp;
+  final long rowKey;
 //  public Prewrite(String key, String value, HTimestamp timestamp) {
 //    this.key = key;
 //    this.value = value;
@@ -14,15 +14,8 @@ public class Prewrite {
 
   public Prewrite(RowOp data, HTimestamp timestamp) {
     this.data = data;
-    this.key = data.rows.get(0).getValueList()[0].toString();
-    if (data.rows.get(1) != null) {
-      System.out.println("value - " + data.rows.get(1).getValue(1));
-      this.value = data.rows.get(1).getValue(1).toString();
-    } else {
-      System.out.println("value - " + data.rows.get(0).getValue(1));
-      this.value = data.rows.get(0).getValue(1).toString();
-    }
-    
+    this.key = data.key;
+    this.rowKey = data.rows.get(0).getKey();
     this.timestamp = timestamp;
   }
   
@@ -59,6 +52,6 @@ public class Prewrite {
   
   @Override
   public String toString() {
-    return "{key: "+key+", value: "+value+", data: "+data+", ts: "+timestamp+"}";
+    return "{key: "+key+", data: "+data+", ts: "+timestamp+"}";
   }
 }

@@ -29,6 +29,10 @@ import org.h2.result.SortOrder;
 import org.h2.table.Column;
 import org.h2.table.IndexColumn;
 import org.h2.table.TableFilter;
+import org.h2.twopc.DataManager;
+import org.h2.twopc.HTimestamp;
+import org.h2.twopc.RowOp;
+import org.h2.twopc.TwoPCCoordinator;
 import org.h2.value.Value;
 import org.h2.value.ValueLob;
 import org.h2.value.ValueNull;
@@ -433,21 +437,46 @@ public class MVPrimaryIndex extends BaseIndex implements MVIndex<Long,SearchRow>
         private final Iterator<Entry<Long,SearchRow>> it;
         private Entry<Long,SearchRow> current;
         private Row row;
+        private final Session session;
 
         public MVStoreCursor(Iterator<Entry<Long,SearchRow>> it) {
             this.it = it;
+            this.session = null;
         }
 
+        public MVStoreCursor(Iterator<Entry<Long,SearchRow>> it, Session session) {
+            this.it = it;
+            this.session = session;
+        }
+        
         @Override
         public Row get() {
+            //TODO: record read operation for TS2PC
+//            boolean result = DataManager.getInstance().read(
+//                new RowOp(row), 
+//                new HTimestamp(TwoPCCoordinator.getInstance().getHostId(), session.getTransaction().getGlobalId()));
+//            
+//            if (!result) {
+//              throw DbException.get(99999, new RuntimeException("DataManager rejected read operation!"));
+//            }
+          
             if (row == null) {
                 if (current != null) {
                     row = (Row)current.getValue();
+
+                    //Check data manager for any prewrites
+                    Row r = DataManager.getInstance().get(current.getKey(), 
+                        new HTimestamp(TwoPCCoordinator.getInstance().getHostId(), session.getTransaction().getGlobalId()));
+                    if (r != null) {
+                      return r;
+                    }
+                    
                     if (row.getKey() == 0) {
                         row.setKey(current.getKey());
                     }
                 }
             }
+            
             return row;
         }
 
