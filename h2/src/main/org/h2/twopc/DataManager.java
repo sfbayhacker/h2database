@@ -27,6 +27,8 @@ public class DataManager {
   Map<HTimestamp, List<Prewrite>> txMap = new ConcurrentHashMap<>();
   //key map -- row key <> primary key
   Map<Long, String> keyMap = new ConcurrentHashMap<>();
+  //writes cache map -- TODO: remove entries based on time (10s)
+  Map<String, Row> writesCache = new ConcurrentHashMap<>();
   
   private static class InstanceHolder {
     private static DataManager INSTANCE = new DataManager();
@@ -48,13 +50,13 @@ public class DataManager {
     String key = null;
     
     if ( (key = keyMap.get(data.rowKey)) == null) {
-      return null;
+      return getFromWritesCacheOrNull(data.key);
     }
     
     List<Prewrite> l = txMap.get(ts);
     
     if (l == null || l.isEmpty()) {
-      return null;
+      return getFromWritesCacheOrNull(key);
     }
     
     Iterator<Prewrite> it = l.iterator();
@@ -66,6 +68,10 @@ public class DataManager {
         resultRow = pw.data.resultRow;
         System.out.println("matching row - " + resultRow);
       }
+    }
+    
+    if (resultRow == null) {
+      return getFromWritesCacheOrNull(key);
     }
     
     return resultRow;
@@ -105,6 +111,7 @@ public class DataManager {
           Prewrite minP = pwMap.get(data.key) == null ? null : pwMap.get(data.key).peek();
 //          minTS = pwMap.get(data.key).peek().timestamp;
           if (minP == null || ts.lessThanOrEqualTo(minP.timestamp)) {
+            setRTM(data, ts);
             return true;
           }
           
@@ -113,7 +120,7 @@ public class DataManager {
           } catch (InterruptedException e) {
             System.err.println(e.getMessage());
           }
-          if (++count == 200) {
+          if (++count == 1000) {
             throw DbException.get(99999, new RuntimeException("Waited 2s for prewrites to complete!"));
           }
         }
@@ -124,10 +131,13 @@ public class DataManager {
   }
   
   private void setRTM(RowOp data, HTimestamp ts) {
+    System.out.println(String.format("DataManager::setRTM(%s)", ts.toString()));
     HTimestamp rtm = rtmMap.getOrDefault(data.key, new HTimestamp(ts.hid, Long.MIN_VALUE));
     if (ts.greaterThan(rtm)) {
       rtmMap.put(data.key, new HTimestamp(ts.hid, ts.timestamp));
-    }    
+    }
+    
+    System.out.println(String.format("rtmMap - %s", rtmMap));
   }
   
   public boolean prewrite(RowOp data, HTimestamp ts) {
@@ -212,6 +222,7 @@ public class DataManager {
       CommandProcessor.getInstance().rowOp(row, newRow, "", "", 
           pw.data.command, pw.data.remoteSid, pw.data.localSession);
       wtmMap.put(pw.key, pw.timestamp);
+      writesCache.put(pw.key, newRow == null ? row : newRow);
       return true;
 //    }
     
@@ -251,6 +262,10 @@ public class DataManager {
       pwMap.remove(pw.key);
       keyMap.remove(pw.rowKey);
     }
+  }
+  
+  private Row getFromWritesCacheOrNull(String key) {
+    return writesCache.get(key);
   }
   
   private class PrewriteComparator implements Comparator<Prewrite> {
