@@ -29,6 +29,7 @@ public class TwoPCCoordinator {
   private Properties props;
   private String grpcPort;
   private boolean clustered;
+  private boolean dummy;
 
   private static class InstanceHolder {
     private static TwoPCCoordinator INSTANCE = new TwoPCCoordinator();
@@ -41,8 +42,12 @@ public class TwoPCCoordinator {
       grpcPort = props.get("grpcPort") == null ? "50051" : props.get("grpcPort").toString();
       Object peers = props.get("peerAddresses");
       if ((clustered = peers != null)) {
-        cohorts = peers.toString().split("\\|");
-      } else {
+        if (peers.toString().isEmpty()) {
+          dummy = true;
+          System.out.println("Running in dummy coordinator mode!");
+        } else {
+          cohorts = peers.toString().split("\\|");
+        }
       }
     } catch (Exception e) {
       System.err.println("Error loading properties!");
@@ -73,7 +78,13 @@ public class TwoPCCoordinator {
         return false;
       }
       
-      result = sendMessage(op, dbName, tableName, sid, tid, hostId, TwoPCUtils.serialize(list));
+      //TODO: temp check to be removed
+      if (dummy) {
+        result = true;
+      }
+      else {
+        result = sendMessage(op, dbName, tableName, sid, tid, hostId, TwoPCUtils.serialize(list));
+      }
     } catch (InterruptedException | ExecutionException | IOException e) {
       // TODO Auto-generated catch block
       System.err.println("Failure sending log message: " + e.getMessage());
@@ -95,8 +106,14 @@ public class TwoPCCoordinator {
       String sid = String.valueOf(session.getId());
       long tid = session.getTransaction() == null ? 0L : session.getTransaction().getGlobalId();
       DataManager.getInstance().commit(sid, session, new HTimestamp(getHostId(), tid), false);
-      result = TwoPCCoordinator.getInstance()
-          .sendMessage("commit", dbName, "", String.valueOf(session.getId()), tid, hostId, new byte[0]);
+      
+      if (dummy) {
+        result = true;
+      }
+      else {
+        result = TwoPCCoordinator.getInstance()
+            .sendMessage("commit", dbName, "", String.valueOf(session.getId()), tid, hostId, new byte[0]);
+      }
     } catch (InterruptedException | ExecutionException e) {
       // TODO Auto-generated catch block
       System.err.println("Failure sending log message: " + e.getMessage());
@@ -115,10 +132,17 @@ public class TwoPCCoordinator {
     boolean result = false;
     try {
       String dbName = session.getDatabase().getName();
+      String sid = String.valueOf(session.getId());
       long tid = session.getTransaction() == null ? 0L : session.getTransaction().getGlobalId();
-      DataManager.getInstance().rollback(new HTimestamp(getHostId(), tid));
-      result = TwoPCCoordinator.getInstance()
-          .sendMessage("rollback", dbName, "", String.valueOf(session.getId()), tid, hostId, new byte[0]);
+      DataManager.getInstance().rollback(sid, session, new HTimestamp(getHostId(), tid), false);
+      
+      if (dummy) {
+        result = true;
+      }
+      else {
+        result = TwoPCCoordinator.getInstance()
+            .sendMessage("rollback", dbName, "", String.valueOf(session.getId()), tid, hostId, new byte[0]);
+      }
     } catch (InterruptedException | ExecutionException e) {
       // TODO Auto-generated catch block
       System.err.println("Failure sending log message: " + e.getMessage());

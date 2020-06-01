@@ -394,7 +394,7 @@ public class MVPrimaryIndex extends BaseIndex implements MVIndex<Long,SearchRow>
             ensureRowKey(row, first);
             return new SingleRowCursor(row);
         }
-        return new MVStoreCursor(map.entryIterator(first, last));
+        return new MVStoreCursor(map.entryIterator(first, last), session);
     }
 
     @Override
@@ -451,32 +451,32 @@ public class MVPrimaryIndex extends BaseIndex implements MVIndex<Long,SearchRow>
         
         @Override
         public Row get() {
-            //TODO: record read operation for TS2PC
-//            boolean result = DataManager.getInstance().read(
-//                new RowOp(row), 
-//                new HTimestamp(TwoPCCoordinator.getInstance().getHostId(), session.getTransaction().getGlobalId()));
-//            
-//            if (!result) {
-//              throw DbException.get(99999, new RuntimeException("DataManager rejected read operation!"));
-//            }
+          System.out.println("MVStoreCursor::get()");
+          System.out.println("get row - " + row);
           
             if (row == null) {
                 if (current != null) {
                     row = (Row)current.getValue();
 
-                    //Check data manager for any prewrites
-                    Row r = DataManager.getInstance().get(current.getKey(), 
-                        new HTimestamp(TwoPCCoordinator.getInstance().getHostId(), session.getTransaction().getGlobalId()));
-                    if (r != null) {
-                      return r;
-                    }
-                    
                     if (row.getKey() == 0) {
                         row.setKey(current.getKey());
                     }
                 }
             }
+
+            System.out.println("get row after - " + row);
             
+            //Check data manager for any prewrites and read updated value
+            if (TwoPCCoordinator.getInstance().isClustered() 
+                && session != null && "sa".equalsIgnoreCase(session.getUser().getName())) {
+              System.out.println("get row for key - " + row.getKey());
+              Row r = DataManager.getInstance().read(new RowOp(row), 
+                  new HTimestamp(TwoPCCoordinator.getInstance().getHostId(), session.getTransaction().getGlobalId()));
+              if (r != null) {
+                return r;
+              }
+            }
+
             return row;
         }
 

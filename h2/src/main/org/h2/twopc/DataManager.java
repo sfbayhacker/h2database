@@ -2,15 +2,14 @@ package org.h2.twopc;
 
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.h2.engine.Session;
+import org.h2.message.DbException;
 import org.h2.result.Row;
 
 public class DataManager {
@@ -19,13 +18,13 @@ public class DataManager {
   //largest timestamp of write operation on key
   Map<String, HTimestamp> wtmMap = new ConcurrentHashMap<>();
   //reads for key
-  Map<String, PriorityQueue<HTimestamp>> rMap = new ConcurrentHashMap<>();
+//  Map<String, PriorityQueue<HTimestamp>> rMap = new ConcurrentHashMap<>();
   //prewrites for key
   Map<String, PriorityQueue<Prewrite>> pwMap = new ConcurrentHashMap<>();
   //writes for key
   Map<String, PriorityQueue<Prewrite>> wMap = new ConcurrentHashMap<>();
   //prewrites for txn
-  Map<HTimestamp, Set<Prewrite>> txMap = new ConcurrentHashMap<>();
+  Map<HTimestamp, List<Prewrite>> txMap = new ConcurrentHashMap<>();
   //key map -- row key <> primary key
   Map<Long, String> keyMap = new ConcurrentHashMap<>();
   
@@ -40,32 +39,41 @@ public class DataManager {
     return InstanceHolder.INSTANCE;
   }
   
-  public Row get(long rowKey, HTimestamp ts) {
+  public Row read(RowOp data, HTimestamp ts) {
+    System.out.println(String.format("DataManager::read(%s)", ts.toString()));
+    if (!checkReadOp(data, ts)) {
+      throw DbException.get(99999, new RuntimeException("Read before write on same key!"));
+    }
+    
     String key = null;
     
-    if ( (key = keyMap.get(rowKey)) == null) {
+    if ( (key = keyMap.get(data.rowKey)) == null) {
       return null;
     }
     
-    PriorityQueue<Prewrite> q = pwMap.get(key);
+    List<Prewrite> l = txMap.get(ts);
     
-    if (q == null || q.isEmpty()) {
+    if (l == null || l.isEmpty()) {
       return null;
     }
     
-    Iterator<Prewrite> it = q.iterator();
+    Iterator<Prewrite> it = l.iterator();
+    Row resultRow = null;
+    //TODO: check how to get last matching element
     while(it.hasNext()) {
       Prewrite pw = it.next();
       if (key.equals(pw.key)) {
-        return pw.data.resultRow;
+        resultRow = pw.data.resultRow;
+        System.out.println("matching row - " + resultRow);
       }
     }
     
-    return null;
+    return resultRow;
   }
   
-  public boolean read(RowOp data, HTimestamp ts) {
+  private boolean checkReadOp(RowOp data, HTimestamp ts) {
     HTimestamp wtm = wtmMap.getOrDefault(data.key, new HTimestamp(ts.hid, Long.MIN_VALUE));
+    System.out.println("Comparing ts " + ts + " with wtm " + wtm);
     if (ts.compareTo(wtm) < 0) {
       return false;
     }
@@ -84,12 +92,15 @@ public class DataManager {
     
     PriorityQueue<Prewrite> q = pwMap.get(data.key);
     if (q == null || q.isEmpty()) {
+      System.out.println("q is empty");
       setRTM(data, ts);
     } else {
       HTimestamp minTS = pwMap.get(data.key).peek().timestamp;
+      System.out.println("Comparing ts " + ts + " with minTS " + minTS);
       if (ts.compareTo(minTS) <= 0) {
         setRTM(data, ts);
       } else {
+        int count = 0;
         while(true) {
           minTS = pwMap.get(data.key).peek().timestamp;
           if (ts.compareTo(minTS) <= 0) {
@@ -100,6 +111,9 @@ public class DataManager {
             Thread.sleep(10);
           } catch (InterruptedException e) {
             System.err.println(e.getMessage());
+          }
+          if (++count == 200) {
+            throw DbException.get(99999, new RuntimeException("Waited 2s for prewrites to complete!"));
           }
         }
       }
@@ -116,22 +130,31 @@ public class DataManager {
   }
   
   public boolean prewrite(RowOp data, HTimestamp ts) {
-    Prewrite pw = new Prewrite(data, ts);
+    System.out.println(String.format("DataManager::prewrite(%s)", ts.toString()));
+    int seq = txMap.get(ts) == null ? 0 : txMap.get(ts).size() + 1;
+    Prewrite pw = new Prewrite(data, ts, seq);
     HTimestamp wtm = wtmMap.getOrDefault(pw.key, new HTimestamp(ts.hid, Long.MIN_VALUE));
-    if (ts.compareTo(wtm) < 0) return false;
+    HTimestamp rtm = rtmMap.getOrDefault(pw.key, new HTimestamp(ts.hid, Long.MIN_VALUE));
+    if (ts.compareTo(rtm) < 0 || ts.compareTo(wtm) < 0) return false;
     
     pwMap.computeIfAbsent(pw.key, k -> new PriorityQueue<>(new PrewriteComparator()));
     pwMap.get(pw.key).removeIf(e -> e.equals(pw));
     pwMap.get(pw.key).add(pw);
+    
+    System.out.println("pwMap - " + pwMap);
+    
     keyMap.put(pw.rowKey, pw.key);
-    txMap.computeIfAbsent(ts, k -> new HashSet<>());
+    txMap.computeIfAbsent(ts, k -> new ArrayList<>());
     txMap.get(ts).add(pw);
+    
+    System.out.println("txMap - " + txMap);
+    
     return true;
   }
   
   public void commit(String remoteSid, Session localSession, HTimestamp ts, boolean grpc) {
-    System.out.println(String.format("commit(%s)", ts.toString()));
-    Set<Prewrite> txPrewrites = txMap.get(ts);
+    System.out.println(String.format("DataManager::commit(%s)", ts.toString()));
+    List<Prewrite> txPrewrites = txMap.get(ts);
     if (txPrewrites == null || txPrewrites.size() == 0) {
       return;
     }
@@ -144,26 +167,20 @@ public class DataManager {
     }
     
     for(Prewrite pw: toRemove) {
-      txMap.get(pw.timestamp).remove(pw);
-      if (txMap.get(pw.timestamp).isEmpty()) {
-        txMap.remove(pw.timestamp);
-      }
+      removeFromTxMap(pw);
+      removeFromPwMap(pw);
     }
     
     CommandProcessor.getInstance().commit(remoteSid, localSession);
   }
   
   private void checkAndWrite(Prewrite pw, long minTS, List<Prewrite> toRemove, boolean grpc) {
-    System.out.println(String.format("checkAndWrite(%s, %s, %s)", pw.toString(), String.valueOf(minTS), toRemove));
+    System.out.println(String.format("DataManager::checkAndWrite(%s, %s, %s)", pw.toString(), String.valueOf(minTS), toRemove));
     boolean result = write(pw, grpc);
     
     if (result) {
-      pwMap.get(pw.key).removeIf(e -> e.equals(pw));
-      if (pwMap.get(pw.key) == null || pwMap.get(pw.key).isEmpty()) {
-        keyMap.remove(pw.rowKey);
-      }
       if (wMap.get(pw.key) != null) {
-        wMap.get(pw.key).removeIf(e -> e.equals(pw));
+        wMap.get(pw.key).remove(pw);
       }
       
       Prewrite minP = pwMap.get(pw.key).peek();
@@ -186,29 +203,63 @@ public class DataManager {
   
   private boolean write(Prewrite pw, boolean grpc) {
     System.out.println(String.format("write(%s)", pw.toString()));
-    rMap.computeIfAbsent(pw.key, k -> new PriorityQueue<>());
-    HTimestamp rMinTS = rMap.get(pw.key).peek();
-    if (rMinTS == null || rMinTS.compareTo(pw.timestamp) >= 0) {
+//    rMap.computeIfAbsent(pw.key, k -> new PriorityQueue<>());
+//    HTimestamp rMinTS = rMap.get(pw.key).peek();
+//    if (rMinTS == null || rMinTS.compareTo(pw.timestamp) >= 0) {
       Row row = pw.data.rows.get(0);
       Row newRow = pw.data.rows.get(1);
       CommandProcessor.getInstance().rowOp(row, newRow, "", "", 
           pw.data.command, pw.data.remoteSid, pw.data.localSession);
       wtmMap.put(pw.key, pw.timestamp);
       return true;
-    }
+//    }
     
-    return false;
+//    return false;
   }
   
-  public void rollback(HTimestamp ts) {
-    //TODO
-    System.out.println("Rollback not implemented yet!");
+  public void rollback(String remoteSid, Session localSession, HTimestamp ts, boolean grpc) {
+    System.out.println(String.format("DataManager::rollback(%s)", ts.toString()));
+    List<Prewrite> txPrewrites = txMap.get(ts);
+    if (txPrewrites == null || txPrewrites.isEmpty()) {
+      CommandProcessor.getInstance().rollback(remoteSid, localSession);
+      return;
+    }
+
+    //remove prewrites
+    for(Prewrite pw: txPrewrites) {
+      removeFromPwMap(pw);
+    }
+    
+    //clear tx map
+    txMap.remove(ts);
+    
+    //rollback
+    CommandProcessor.getInstance().rollback(remoteSid, localSession);
+  }
+  
+  private void removeFromTxMap(Prewrite pw) {
+    txMap.get(pw.timestamp).remove(pw);
+    if (txMap.get(pw.timestamp).isEmpty()) {
+      txMap.remove(pw.timestamp);
+    }
+  }
+
+  private void removeFromPwMap(Prewrite pw) {
+    pwMap.get(pw.key).remove(pw);
+    if (pwMap.get(pw.key).isEmpty()) {
+      pwMap.remove(pw.key);
+      keyMap.remove(pw.rowKey);
+    }
   }
   
   private class PrewriteComparator implements Comparator<Prewrite> {
     @Override
     public int compare(Prewrite o1, Prewrite o2) {
-      return o1.timestamp.compareTo(o2.timestamp);
+      int result = o1.timestamp.compareTo(o2.timestamp);
+      if (result == 0) {
+        result = o1.seq.compareTo(o2.seq);
+      }
+      return result;
     }
   }
 }

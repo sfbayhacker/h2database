@@ -13,6 +13,7 @@ public class RowOp {
   final String remoteSid;
   final Session localSession;
   
+  final long rowKey;
   final String key;
   final String value;
   
@@ -22,6 +23,7 @@ public class RowOp {
     this.remoteSid = null;
     this.localSession = null;
     
+    this.rowKey = row.getKey();
     this.key = row.getValueList()[0].toString();
     System.out.println("value - " + row.getValue(1));
     this.value = row.getValue(1).toString();
@@ -34,6 +36,7 @@ public class RowOp {
     this.remoteSid = sid;
     this.localSession = session;
     
+    this.rowKey = rows.get(0).getKey();
     this.key = rows.get(0).getValueList()[0].toString();
     if (rows.get(1) != null) {
       System.out.println("value - " + rows.get(1).getValue(1));

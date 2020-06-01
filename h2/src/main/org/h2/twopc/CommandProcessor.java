@@ -88,7 +88,7 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
       }
       case "rollback": {
 //        rollback(sid);
-        DataManager.getInstance().rollback(new HTimestamp(hid, tid));
+        DataManager.getInstance().rollback(sid, null, new HTimestamp(hid, tid), true);
         response.setReply("OK");
         break;
       }

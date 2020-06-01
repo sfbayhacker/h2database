@@ -4,6 +4,7 @@ public class Prewrite {
   final String key;
   final RowOp data;
   final HTimestamp timestamp;
+  final Integer seq;
   final long rowKey;
 //  public Prewrite(String key, String value, HTimestamp timestamp) {
 //    this.key = key;
@@ -12,11 +13,12 @@ public class Prewrite {
 //    this.data = null;
 //  }
 
-  public Prewrite(RowOp data, HTimestamp timestamp) {
+  public Prewrite(RowOp data, HTimestamp timestamp, int seq) {
     this.data = data;
     this.key = data.key;
     this.rowKey = data.rows.get(0).getKey();
     this.timestamp = timestamp;
+    this.seq = seq;
   }
   
   @Override
@@ -25,6 +27,7 @@ public class Prewrite {
     int result = 1;
     result = prime * result + ((key == null) ? 0 : key.hashCode());
     result = prime * result + ((timestamp == null) ? 0 : timestamp.hashCode());
+    result = prime * result + ((seq == null) ? 0 : seq.hashCode());
     return result;
   }
   
@@ -47,11 +50,16 @@ public class Prewrite {
         return false;
     } else if (!timestamp.equals(other.timestamp))
       return false;
+    if (seq == null) {
+      if (other.seq != null)
+        return false;
+    } else if (!seq.equals(other.seq))
+      return false;
     return true;
   }
   
   @Override
   public String toString() {
-    return "{key: "+key+", data: "+data+", ts: "+timestamp+"}";
+    return "{key: "+key+", data: "+data+", ts: "+timestamp+", seq: "+seq+"}";
   }
 }
