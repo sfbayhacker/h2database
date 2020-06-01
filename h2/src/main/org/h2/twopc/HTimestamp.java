@@ -9,6 +9,22 @@ public class HTimestamp implements Comparable<HTimestamp> {
     this.timestamp = timestamp;
   }
 
+  public boolean lessThan(HTimestamp other) {
+    return compareTo(other) < 0;
+  }
+  
+  public boolean lessThanOrEqualTo(HTimestamp other) {
+    return compareTo(other) <= 0;
+  }
+  
+  public boolean greaterThan(HTimestamp other) {
+    return compareTo(other) > 0;
+  }
+  
+  public boolean greaterThanOrEqualTo(HTimestamp other) {
+    return compareTo(other) >= 0;
+  }
+  
   @Override
   public int hashCode() {
     final int prime = 31;

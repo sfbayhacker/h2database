@@ -74,7 +74,7 @@ public class DataManager {
   private boolean checkReadOp(RowOp data, HTimestamp ts) {
     HTimestamp wtm = wtmMap.getOrDefault(data.key, new HTimestamp(ts.hid, Long.MIN_VALUE));
     System.out.println("Comparing ts " + ts + " with wtm " + wtm);
-    if (ts.compareTo(wtm) < 0) {
+    if (ts.lessThan(wtm)) {
       return false;
     }
     
@@ -97,13 +97,13 @@ public class DataManager {
     } else {
       HTimestamp minTS = pwMap.get(data.key).peek().timestamp;
       System.out.println("Comparing ts " + ts + " with minTS " + minTS);
-      if (ts.compareTo(minTS) <= 0) {
+      if (ts.lessThanOrEqualTo(minTS)) {
         setRTM(data, ts);
       } else {
         int count = 0;
         while(true) {
           minTS = pwMap.get(data.key).peek().timestamp;
-          if (ts.compareTo(minTS) <= 0) {
+          if (ts.lessThanOrEqualTo(minTS)) {
             return true;
           }
           
@@ -124,7 +124,7 @@ public class DataManager {
   
   private void setRTM(RowOp data, HTimestamp ts) {
     HTimestamp rtm = rtmMap.getOrDefault(data.key, new HTimestamp(ts.hid, Long.MIN_VALUE));
-    if (ts.compareTo(rtm) > 0) {
+    if (ts.greaterThan(rtm)) {
       rtmMap.put(data.key, new HTimestamp(ts.hid, ts.timestamp));
     }    
   }
@@ -135,7 +135,7 @@ public class DataManager {
     Prewrite pw = new Prewrite(data, ts, seq);
     HTimestamp wtm = wtmMap.getOrDefault(pw.key, new HTimestamp(ts.hid, Long.MIN_VALUE));
     HTimestamp rtm = rtmMap.getOrDefault(pw.key, new HTimestamp(ts.hid, Long.MIN_VALUE));
-    if (ts.compareTo(rtm) < 0 || ts.compareTo(wtm) < 0) return false;
+    if (ts.lessThan(rtm) || ts.lessThan(wtm)) return false;
     
     pwMap.computeIfAbsent(pw.key, k -> new PriorityQueue<>(new PrewriteComparator()));
     pwMap.get(pw.key).removeIf(e -> e.equals(pw));
@@ -162,7 +162,7 @@ public class DataManager {
     List<Prewrite> toRemove = new ArrayList<>();
 
     for(Prewrite pw: txPrewrites) {
-      long minTS = pwMap.get(pw.key).peek().timestamp.timestamp;
+      HTimestamp minTS = pwMap.get(pw.key).peek().timestamp;
       checkAndWrite(pw, minTS, toRemove, grpc);
     }
     
@@ -174,7 +174,7 @@ public class DataManager {
     CommandProcessor.getInstance().commit(remoteSid, localSession);
   }
   
-  private void checkAndWrite(Prewrite pw, long minTS, List<Prewrite> toRemove, boolean grpc) {
+  private void checkAndWrite(Prewrite pw, HTimestamp minTS, List<Prewrite> toRemove, boolean grpc) {
     System.out.println(String.format("DataManager::checkAndWrite(%s, %s, %s)", pw.toString(), String.valueOf(minTS), toRemove));
     boolean result = write(pw, grpc);
     
@@ -185,8 +185,8 @@ public class DataManager {
       
       Prewrite minP = pwMap.get(pw.key).peek();
       if (minP != null) {
-        long newMinTS = minP.timestamp.timestamp;
-        if (newMinTS > minTS && !wMap.isEmpty()) {
+        HTimestamp newMinTS = minP.timestamp;
+        if (newMinTS.greaterThan(minTS) && !wMap.isEmpty()) {
           checkAndWrite(wMap.get(pw.key).peek(), newMinTS, toRemove, grpc);
         }
       }
@@ -202,10 +202,10 @@ public class DataManager {
   }
   
   private boolean write(Prewrite pw, boolean grpc) {
-    System.out.println(String.format("write(%s)", pw.toString()));
+    System.out.println(String.format("DataManager::write(%s)", pw.toString()));
 //    rMap.computeIfAbsent(pw.key, k -> new PriorityQueue<>());
 //    HTimestamp rMinTS = rMap.get(pw.key).peek();
-//    if (rMinTS == null || rMinTS.compareTo(pw.timestamp) >= 0) {
+//    if (rMinTS == null || rMinTS.greaterThanOrEqualTo(pw.timestamp)) {
       Row row = pw.data.rows.get(0);
       Row newRow = pw.data.rows.get(1);
       CommandProcessor.getInstance().rowOp(row, newRow, "", "", 
