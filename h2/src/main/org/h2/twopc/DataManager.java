@@ -102,8 +102,9 @@ public class DataManager {
       } else {
         int count = 0;
         while(true) {
-          minTS = pwMap.get(data.key).peek().timestamp;
-          if (ts.lessThanOrEqualTo(minTS)) {
+          Prewrite minP = pwMap.get(data.key) == null ? null : pwMap.get(data.key).peek();
+//          minTS = pwMap.get(data.key).peek().timestamp;
+          if (minP == null || ts.lessThanOrEqualTo(minP.timestamp)) {
             return true;
           }
           
