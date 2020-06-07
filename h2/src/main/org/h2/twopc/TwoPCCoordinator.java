@@ -2,8 +2,10 @@ package org.h2.twopc;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Arrays; 
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -31,6 +33,8 @@ public class TwoPCCoordinator {
   private boolean clustered;
   private boolean dummy;
 
+  private Map<String, ManagedChannel> channelMap = new HashMap<>();
+  
   private static class InstanceHolder {
     private static TwoPCCoordinator INSTANCE = new TwoPCCoordinator();
   }
@@ -231,11 +235,16 @@ public class TwoPCCoordinator {
     // and reusable. It is common to create channels at the beginning of your
     // application and reuse
     // them until the application shuts down.
-    ManagedChannel channel = ManagedChannelBuilder.forTarget(cohort)
-        // Channels are secure by default (via SSL/TLS). For the example we disable TLS
-        // to avoid
-        // needing certificates.
-        .usePlaintext().build();
+    ManagedChannel channel = null;
+    if ((channel = channelMap.get(cohort)) == null) {
+      channel = ManagedChannelBuilder.forTarget(cohort)
+          // Channels are secure by default (via SSL/TLS). For the example we disable TLS
+          // to avoid
+          // needing certificates.
+          .usePlaintext().build();
+      channelMap.put(cohort, channel);
+    }
+
     try {
       return new TwoPCClient(channel);
     } finally {

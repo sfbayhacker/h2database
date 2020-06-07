@@ -62,10 +62,10 @@ public class TwoPCClient {
   }
   
   public void shutdown() {
-    try {
-      ((ManagedChannel)blockingStub.getChannel()).shutdownNow().awaitTermination(5, TimeUnit.SECONDS);
-    } catch (InterruptedException e) {
-      System.err.println("Error shutting down managed channel!");
-    }
+//    try {
+//      ((ManagedChannel)blockingStub.getChannel()).shutdownNow().awaitTermination(5, TimeUnit.SECONDS);
+//    } catch (InterruptedException e) {
+//      System.err.println("Error shutting down managed channel!");
+//    }
   }
 }
