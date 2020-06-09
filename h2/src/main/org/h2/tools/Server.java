@@ -19,6 +19,7 @@ import org.h2.server.ShutdownHandler;
 import org.h2.server.TcpServer;
 import org.h2.server.pg.PgServer;
 import org.h2.server.web.WebServer;
+import org.h2.twopc.TwoPCFollower;
 import org.h2.twopc.TwoPCServer;
 import org.h2.util.StringUtils;
 import org.h2.util.Tool;
@@ -35,13 +36,15 @@ public class Server extends Tool implements Runnable, ShutdownHandler {
     private ShutdownHandler shutdownHandler;
     private boolean started;
 
-//    static {
-//      System.setOut(new PrintStream(new OutputStream() {
-//        public void write(int b) {
-//          // NO-OP
-//        }
-//      }));
-//    }
+    static {
+      System.setOut(new PrintStream(new OutputStream() {
+        public void write(int b) {
+          // NO-OP
+        }
+      }));
+      
+      TwoPCFollower.getInstance();
+    }
     
     public Server() {
         // nothing to do
