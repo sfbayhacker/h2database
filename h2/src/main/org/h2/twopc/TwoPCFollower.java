@@ -17,6 +17,11 @@ public class TwoPCFollower {
   }
 
   private TwoPCFollower() {
+
+  }
+
+  public void init() {
+    System.out.println("TwoPCFollower()");
     if (ClusterInfo.getInstance().isFollower()) {
       try {
         doInitChecks();
@@ -25,7 +30,7 @@ public class TwoPCFollower {
       }      
     }
   }
-
+  
   public static TwoPCFollower getInstance() {
     return InstanceHolder.INSTANCE;
   }

@@ -33,16 +33,19 @@ public class LogManager {
   }
   
   private LogManager() {
+  }
+  
+  public static LogManager getInstance() {
+    return InstanceHolder.INSTANCE;
+  } 
+  
+  public void init() {
     try {
       readLog();
     } catch (IOException e) {
       System.err.println("Error while loading log file: " + e.getMessage());
     }
   }
-  
-  public static LogManager getInstance() {
-    return InstanceHolder.INSTANCE;
-  } 
   
   boolean appendLogEntry(String txnId, String status) {
     if (StringUtils.isNullOrEmpty(txnId) || StringUtils.isNullOrEmpty(status)) return false;

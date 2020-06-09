@@ -5,8 +5,6 @@
  */
 package org.h2.tools;
 
-import java.io.OutputStream;
-import java.io.PrintStream;
 import java.net.URI;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -19,6 +17,8 @@ import org.h2.server.ShutdownHandler;
 import org.h2.server.TcpServer;
 import org.h2.server.pg.PgServer;
 import org.h2.server.web.WebServer;
+import org.h2.twopc.DataManager;
+import org.h2.twopc.LogManager;
 import org.h2.twopc.TwoPCFollower;
 import org.h2.twopc.TwoPCServer;
 import org.h2.util.StringUtils;
@@ -37,13 +37,16 @@ public class Server extends Tool implements Runnable, ShutdownHandler {
     private boolean started;
 
     static {
-      System.setOut(new PrintStream(new OutputStream() {
-        public void write(int b) {
-          // NO-OP
-        }
-      }));
-      
-      TwoPCFollower.getInstance();
+//      System.setOut(new PrintStream(new OutputStream() {
+//        public void write(int b) {
+//          // NO-OP
+//        }
+//      }));
+
+      System.out.println("Initializing..");
+      LogManager.getInstance().init();
+      DataManager.getInstance().init();
+      TwoPCFollower.getInstance().init();
     }
     
     public Server() {

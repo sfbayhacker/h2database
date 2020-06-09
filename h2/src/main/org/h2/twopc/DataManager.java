@@ -37,6 +37,9 @@ public class DataManager implements Serializable {
   }
   
   private DataManager() {
+  }
+  
+  public void init() {
     try {
       DataManager restored = LogManager.getInstance().restoreState();
       if (restored != null) {
