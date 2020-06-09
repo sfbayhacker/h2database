@@ -39,6 +39,7 @@ public class TwoPCFollower {
     System.out.println("Performing init checks..");
     List<HTimestamp> prepared = LogManager.getInstance().getPreparedTransactions();
     System.out.println("prepared list: " + prepared);
+    if (true) return;
     if (prepared == null || prepared.isEmpty()) return;
     
     for(HTimestamp ts: prepared) {
