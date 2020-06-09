@@ -124,14 +124,16 @@ public class TwoPCCoordinator {
     boolean result = LogManager.getInstance().appendLogEntry("" + ClusterInfo.getInstance().getHostId() + "#" + tid,
         "commit");
     if (result) {
-      new Thread(() -> {
-        try {
-          TwoPCCoordinator.getInstance().sendMessage(command, dbName, "", String.valueOf(session.getId()), tid,
-              ClusterInfo.getInstance().getHostId(), new byte[0]);
-        } catch (InterruptedException | ExecutionException e) {
-          System.err.println("Error while sending " + command + " to followers: " + e.getMessage());
-        }
-      }).start();
+      if (!ClusterInfo.getInstance().isDummy()) {
+        new Thread(() -> {
+          try {
+            TwoPCCoordinator.getInstance().sendMessage(command, dbName, "", String.valueOf(session.getId()), tid,
+                ClusterInfo.getInstance().getHostId(), new byte[0]);
+          } catch (InterruptedException | ExecutionException e) {
+            System.err.println("Error while sending " + command + " to followers: " + e.getMessage());
+          }
+        }).start();        
+      }
 
       String sid = String.valueOf(session.getId());
       DataManager.getInstance().commit(sid, session, new HTimestamp(ClusterInfo.getInstance().getHostId(), tid), false);

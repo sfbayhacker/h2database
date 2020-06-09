@@ -17,10 +17,12 @@ public class TwoPCFollower {
   }
 
   private TwoPCFollower() {
-    try {
-      doInitChecks();
-    } catch (InterruptedException | ExecutionException e) {
-      System.err.println("Error while performing init checks: " + e.getMessage());
+    if (ClusterInfo.getInstance().isFollower()) {
+      try {
+        doInitChecks();
+      } catch (InterruptedException | ExecutionException e) {
+        System.err.println("Error while performing init checks: " + e.getMessage());
+      }      
     }
   }
 
@@ -29,13 +31,17 @@ public class TwoPCFollower {
   }
   
   private void doInitChecks() throws InterruptedException, ExecutionException {
+    System.out.println("Performing init checks..");
     List<HTimestamp> prepared = LogManager.getInstance().getPreparedTransactions();
+    System.out.println("prepared list: " + prepared);
     if (prepared == null || prepared.isEmpty()) return;
     
     for(HTimestamp ts: prepared) {
       while (true) {
+        System.out.println("Checking status of " + ts + " with coordinator.. ");
         Optional<String> txnStatus = checkTxnStatus(ts.timestamp);
         if (txnStatus.isPresent()) {
+          System.out.println("Txn status is " + txnStatus.get());
           if ("commit".equalsIgnoreCase(txnStatus.get())) {
             List<Prewrite> pwList = DataManager.getInstance().txMap.get(ts);
             if (pwList == null || pwList.isEmpty()) {
@@ -44,6 +50,8 @@ public class TwoPCFollower {
               DataManager.getInstance().commit(pwList.get(0).data.remoteSid, null, ts, true);
             }
           }
+        } else {
+          System.out.println("Txn status not available!!");
         }
       }
     }

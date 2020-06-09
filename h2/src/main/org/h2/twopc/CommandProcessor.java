@@ -1,7 +1,6 @@
 package org.h2.twopc;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -129,6 +128,11 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
       response.setReply(entry.isPresent() ? "COMMIT" : "ABORT");
       break;
     }
+    case "prepare2die": {
+      ClusterInfo.getInstance().setDieOnPrepare(true);
+      response.setReply("OK");
+      break;
+    }
     case "recover": {
       try {
         LogManager.getInstance().readLog();
@@ -171,6 +175,10 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
 
     responseObserver.onNext(response.build());
     responseObserver.onCompleted();
+    
+    if ("prepare".equals(command.toLowerCase()) && ClusterInfo.getInstance().dieOnPrepare()) {
+      System.exit(1);
+    }
   }
 
   void rowOp(Row row, Row newRow, String t, String db, String op, String sid, Session localSession) {

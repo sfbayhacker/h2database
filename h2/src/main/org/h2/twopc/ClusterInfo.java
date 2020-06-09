@@ -15,6 +15,7 @@ public class ClusterInfo {
   private boolean dummy;
   private boolean dieOnPrepare;
   private String coordinator;
+  private boolean follower;
   
   private static class InstanceHolder {
     private static ClusterInfo INSTANCE = new ClusterInfo();
@@ -41,6 +42,7 @@ public class ClusterInfo {
       Object dop = props.get("dieOnPrepare");
       dieOnPrepare = (dop != null && "y".equalsIgnoreCase(dop.toString()));
       coordinator = props.get("coordinator") == null ? null : props.get("coordinator").toString();
+      follower = coordinator != null;
     } catch (Exception e) {
       System.err.println("Error loading properties!");
     }
@@ -89,5 +91,9 @@ public class ClusterInfo {
   
   public String getCoordinator() {
     return coordinator;
+  }
+  
+  public boolean isFollower() {
+    return follower;
   }
 }
