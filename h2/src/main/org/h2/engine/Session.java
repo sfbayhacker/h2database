@@ -50,6 +50,7 @@ import org.h2.store.InDoubtTransaction;
 import org.h2.store.LobStorageFrontend;
 import org.h2.table.Table;
 import org.h2.table.TableType;
+import org.h2.twopc.ClusterInfo;
 import org.h2.twopc.CommandProcessor;
 import org.h2.twopc.TwoPCCoordinator;
 import org.h2.util.DateTimeUtils;
@@ -686,7 +687,7 @@ public class Session extends SessionWithState implements TransactionStore.Rollba
     public void commit(boolean ddl, boolean grpc) {
       System.out.println("Session::commit() - " + getId());
       
-      if (!grpc && TwoPCCoordinator.getInstance().isClustered() && "sa".equalsIgnoreCase(getUser().getName())) {
+      if (!grpc && ClusterInfo.getInstance().isClustered() && "sa".equalsIgnoreCase(getUser().getName())) {
         boolean result = TwoPCCoordinator.getInstance().commit(this);
         if (!result) {  
           System.err.println("Commit on followers failed! Starting rollback..");
@@ -840,7 +841,7 @@ public class Session extends SessionWithState implements TransactionStore.Rollba
       
 //      Thread.dumpStack();
       
-      if (!grpc && TwoPCCoordinator.getInstance().isClustered() && "sa".equalsIgnoreCase(getUser().getName())) {
+      if (!grpc && ClusterInfo.getInstance().isClustered() && "sa".equalsIgnoreCase(getUser().getName())) {
         boolean result = TwoPCCoordinator.getInstance().rollback(this);
         if (!result) System.err.println("Rollback on followers failed!");
       }

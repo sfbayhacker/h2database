@@ -34,6 +34,7 @@ import org.h2.schema.SchemaObject;
 import org.h2.table.Column;
 import org.h2.table.IndexColumn;
 import org.h2.table.RegularTable;
+import org.h2.twopc.ClusterInfo;
 import org.h2.twopc.TwoPCCoordinator;
 import org.h2.util.DebuggingThreadLocal;
 import org.h2.util.MathUtils;
@@ -492,7 +493,7 @@ public class MVTable extends RegularTable {
         Transaction t = session.getTransaction();
         long savepoint = t.setSavepoint();
 
-        if (TwoPCCoordinator.getInstance().isClustered()) {
+        if (ClusterInfo.getInstance().isClustered()) {
           if (!grpc && "map".equalsIgnoreCase(getName()) && "sa".equalsIgnoreCase(session.getUser().getName())) {
             boolean result = TwoPCCoordinator.getInstance().rowOp(session, getName(), row, null, "removerow");
             //if members cannot process instruction, rollback txn and return
@@ -546,7 +547,7 @@ public class MVTable extends RegularTable {
       Transaction t = session.getTransaction();
       long savepoint = t.setSavepoint();
 
-      if (TwoPCCoordinator.getInstance().isClustered()) {
+      if (ClusterInfo.getInstance().isClustered()) {
         if (!grpc && "map".equalsIgnoreCase(getName()) && "sa".equalsIgnoreCase(session.getUser().getName())) {
           boolean result = TwoPCCoordinator.getInstance().rowOp(session, getName(), row, null, "addrow");
           //if members cannot process instruction, rollback txn and return
@@ -590,7 +591,7 @@ public class MVTable extends RegularTable {
         Transaction t = session.getTransaction();
         long savepoint = t.setSavepoint();
 
-        if (TwoPCCoordinator.getInstance().isClustered()) {
+        if (ClusterInfo.getInstance().isClustered()) {
           if (!grpc && "map".equalsIgnoreCase(getName()) && "sa".equalsIgnoreCase(session.getUser().getName())) {
             boolean result = TwoPCCoordinator.getInstance().rowOp(session, getName(), oldRow, newRow, "updaterow");
             //if members cannot process instruction, rollback txn and return

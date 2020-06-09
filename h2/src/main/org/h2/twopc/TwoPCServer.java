@@ -14,7 +14,7 @@ public class TwoPCServer {
 
   public void start() throws IOException {
     /* The port on which the server should run */
-    int port = Integer.parseInt(TwoPCCoordinator.getInstance().getGrpcPort());
+    int port = Integer.parseInt(ClusterInfo.getInstance().getGrpcPort());
     server = ServerBuilder.forPort(port)
         .addService(CommandProcessor.getInstance())
         .build()

@@ -29,6 +29,7 @@ import org.h2.result.SortOrder;
 import org.h2.table.Column;
 import org.h2.table.IndexColumn;
 import org.h2.table.TableFilter;
+import org.h2.twopc.ClusterInfo;
 import org.h2.twopc.DataManager;
 import org.h2.twopc.HTimestamp;
 import org.h2.twopc.RowOp;
@@ -467,11 +468,11 @@ public class MVPrimaryIndex extends BaseIndex implements MVIndex<Long,SearchRow>
             //System.out.println("get row after - " + row);
             
             //Check data manager for any prewrites and read updated value
-            if (TwoPCCoordinator.getInstance().isClustered() 
+            if (ClusterInfo.getInstance().isClustered() 
                 && session != null && "sa".equalsIgnoreCase(session.getUser().getName())) {
               //System.out.println("get row for key - " + row.getKey());
               Row r = DataManager.getInstance().read(new RowOp(row), 
-                  new HTimestamp(TwoPCCoordinator.getInstance().getHostId(), session.getTransaction().getGlobalId()));
+                  new HTimestamp(ClusterInfo.getInstance().getHostId(), session.getTransaction().getGlobalId()));
               if (r != null) {
                 return r;
               }

@@ -33,6 +33,11 @@ public class LogManager {
   }
   
   private LogManager() {
+    try {
+      readLog();
+    } catch (IOException e) {
+      System.err.println("Error while loading log file: " + e.getMessage());
+    }
   }
   
   public static LogManager getInstance() {
@@ -126,7 +131,7 @@ public class LogManager {
     return dm;
   }
   
-  private static class LogEntry {
+  static class LogEntry {
     String txnId;
     String status;
     

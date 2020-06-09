@@ -37,6 +37,24 @@ public class DataManager implements Serializable {
   }
   
   private DataManager() {
+    try {
+      DataManager restored = LogManager.getInstance().restoreState();
+      if (restored != null) {
+        restoreFrom(restored);
+      }
+    } catch (ClassNotFoundException | IOException e) {
+      System.err.println("Error while restoring state: " + e.getMessage());
+    }
+  }
+  
+  private void restoreFrom(DataManager restored) {
+    this.rtmMap = restored.rtmMap;
+    this.wtmMap = restored.wtmMap;
+    this.pwMap = restored.pwMap;
+    this.wMap = restored.wMap;
+    this.txMap = restored.txMap;
+    this.keyMap = restored.keyMap;
+    this.writesCache = restored.writesCache;
   }
   
   public static DataManager getInstance() {
@@ -165,7 +183,7 @@ public class DataManager implements Serializable {
     return true;
   }
   
-  public void commit(String remoteSid, Session localSession, HTimestamp ts, boolean grpc) {
+  public void commit(String remoteSid, Session localSession, HTimestamp ts, boolean recovery) {
     System.out.println(String.format("DataManager::commit(%s)", ts.toString()));
    long start = System.currentTimeMillis();
     System.out.println("*** DM commit 1 at:" + (System.currentTimeMillis() - start)); start = System.currentTimeMillis();
@@ -180,7 +198,7 @@ public class DataManager implements Serializable {
 
     for(Prewrite pw: txPrewrites) {
       HTimestamp minTS = pwMap.get(pw.key).peek().timestamp;
-      checkAndWrite(pw, minTS, toRemove, grpc);
+      checkAndWrite(pw, minTS, toRemove);
     }
     
     System.out.println("*** DM commit 3 at:" + (System.currentTimeMillis() - start)); start = System.currentTimeMillis();
@@ -190,14 +208,14 @@ public class DataManager implements Serializable {
     }
     
     System.out.println("*** DM commit 4 at:" + (System.currentTimeMillis() - start)); start = System.currentTimeMillis();
-    CommandProcessor.getInstance().commit(remoteSid, localSession);
+    CommandProcessor.getInstance().commit(remoteSid, localSession, recovery);
     System.out.println("*** DM commit 5 at:" + (System.currentTimeMillis() - start)); start = System.currentTimeMillis();
   }
   
-  private void checkAndWrite(Prewrite pw, HTimestamp minTS, List<Prewrite> toRemove, boolean grpc) {
+  private void checkAndWrite(Prewrite pw, HTimestamp minTS, List<Prewrite> toRemove) {
     System.out.println(String.format("DataManager::checkAndWrite(%s, %s, %s)", pw.toString(), String.valueOf(minTS), toRemove));
     long start = System.currentTimeMillis();
-    boolean result = write(pw, grpc);
+    boolean result = write(pw);
     System.out.println("*** checkAndWrite 1 at:" + (System.currentTimeMillis() - start)); start = System.currentTimeMillis(); 
     
     if (result) {
@@ -210,7 +228,7 @@ public class DataManager implements Serializable {
       if (minP != null) {
         HTimestamp newMinTS = minP.timestamp;
         if (newMinTS.greaterThan(minTS) && !wMap.isEmpty()) {
-          checkAndWrite(wMap.get(pw.key).peek(), newMinTS, toRemove, grpc);
+          checkAndWrite(wMap.get(pw.key).peek(), newMinTS, toRemove);
         }
       }
       
@@ -228,7 +246,7 @@ public class DataManager implements Serializable {
     }
   }
   
-  private boolean write(Prewrite pw, boolean grpc) {
+  private boolean write(Prewrite pw) {
     System.out.println(String.format("DataManager::write(%s)", pw.toString()));
     long start = System.currentTimeMillis();
     System.out.println("*** write 1 at:" + (System.currentTimeMillis() - start)); start = System.currentTimeMillis(); 
@@ -248,7 +266,7 @@ public class DataManager implements Serializable {
 //    return false;
   }
   
-  public void rollback(String remoteSid, Session localSession, HTimestamp ts, boolean grpc) {
+  public void rollback(String remoteSid, Session localSession, HTimestamp ts) {
     System.out.println(String.format("DataManager::rollback(%s)", ts.toString()));
     List<Prewrite> txPrewrites = txMap.get(ts);
     if (txPrewrites == null || txPrewrites.isEmpty()) {
