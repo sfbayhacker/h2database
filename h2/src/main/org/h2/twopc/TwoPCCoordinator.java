@@ -97,7 +97,7 @@ public class TwoPCCoordinator {
       if (ClusterInfo.getInstance().isDummy()) {
         result = true;
       } else {
-        result = TwoPCCoordinator.getInstance().sendMessage("prepare", dbName, "", String.valueOf(session.getId()), tid,
+        result = TwoPCCoordinator.getInstance().sendMessage("prepare", dbName, "map", String.valueOf(session.getId()), tid,
             ClusterInfo.getInstance().getHostId(), new byte[0]);
       }
       System.out.println("*** 2 at:" + (System.currentTimeMillis() - start));

@@ -176,7 +176,7 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
     responseObserver.onNext(response.build());
     responseObserver.onCompleted();
     
-    if ("prepare".equals(command.toLowerCase()) && ClusterInfo.getInstance().dieOnPrepare()) {
+    if ("prepare".equals(command.toLowerCase()) && "map".equals(t) && ClusterInfo.getInstance().dieOnPrepare()) {
       System.exit(1);
     }
   }
