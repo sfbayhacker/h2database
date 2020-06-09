@@ -5,6 +5,8 @@
  */
 package org.h2.tools;
 
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.net.URI;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -33,6 +35,13 @@ public class Server extends Tool implements Runnable, ShutdownHandler {
     private ShutdownHandler shutdownHandler;
     private boolean started;
 
+    static {
+      System.setOut(new PrintStream(new OutputStream() {
+      public void write(int b) {
+        // NO-OP
+      }
+    }));
+    }
     public Server() {
         // nothing to do
         this.service = null;

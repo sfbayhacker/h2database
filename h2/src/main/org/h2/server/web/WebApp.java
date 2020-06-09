@@ -935,7 +935,7 @@ public class WebApp {
         session.put("user", user);
         boolean isH2 = url.startsWith("jdbc:h2:");
         try {
-            long start = System.currentTimeMillis();
+            long start = System.nanoTime();
             String profOpen = "", profClose = "";
             Profiler prof = new Profiler();
             prof.startCollecting();
@@ -954,7 +954,7 @@ public class WebApp {
                 prof.stopCollecting();
                 profClose = prof.getTop(3);
             }
-            long time = System.currentTimeMillis() - start;
+            long time = System.nanoTime() - start;
             String success;
             if (time > 1000) {
                 success = "<a class=\"error\" href=\"#\" " +
@@ -1040,6 +1040,7 @@ public class WebApp {
     }
 
     private String query() {
+        long time = System.currentTimeMillis();
         String sql = attributes.getProperty("sql").trim();
         try {
             ScriptReader r = new ScriptReader(new StringReader(sql));
@@ -1085,6 +1086,9 @@ public class WebApp {
                 query(conn, s, i, list.size(), buff);
             }
             result = buff.toString();
+            time = System.currentTimeMillis() - time;
+            buff.append("<br />(").append(time).append(" ms FINAL)");
+	    // TODO Look at this
             session.put("result", result);
         } catch (Throwable e) {
             session.put("result", getStackTrace(0, e, session.getContents().isH2()));
@@ -1178,7 +1182,7 @@ public class WebApp {
                 stat = conn.createStatement();
             }
             ResultSet rs;
-            long time = System.currentTimeMillis();
+            long time = System.nanoTime();
             boolean metadata = false;
             Object generatedKeys = null;
             boolean edit = false;
@@ -1325,15 +1329,15 @@ public class WebApp {
                     if (!isResultSet) {
                         buff.append("${text.result.updateCount}: ")
                                 .append(stat.getUpdateCount());
-                        time = System.currentTimeMillis() - time;
-                        buff.append("<br />(").append(time).append(" ms)");
+                        time = System.nanoTime() - time;
+                        buff.append("<br />(").append(time).append(" nano)");
                         stat.close();
                         return buff.toString();
                     }
                     rs = stat.getResultSet();
                 }
             }
-            time = System.currentTimeMillis() - time;
+            time = System.nanoTime() - time;
             buff.append(getResultSet(sql, rs, metadata, list, edit, time, allowEdit));
             // SQLWarning warning = stat.getWarnings();
             // if (warning != null) {
@@ -1371,7 +1375,7 @@ public class WebApp {
         }
         boolean prepared;
         Random random = new Random(1);
-        long time = System.currentTimeMillis();
+        long time = System.nanoTime();
         if (JdbcUtils.isBuiltIn(sql, "@statement")) {
             sql = StringUtils.trimSubstring(sql, "@statement".length());
             prepared = false;
@@ -1420,7 +1424,7 @@ public class WebApp {
                 }
             }
         }
-        time = System.currentTimeMillis() - time;
+        time = System.nanoTime() - time;
         StringBuilder builder = new StringBuilder().append(time).append(" ms: ").append(count).append(" * ")
                 .append(prepared ? "(Prepared) " : "(Statement) ").append('(');
         for (int i = 0, size = params.size(); i < size; i++) {
@@ -1487,7 +1491,7 @@ public class WebApp {
             boolean list, boolean edit, long time, boolean allowEdit)
             throws SQLException {
         int maxrows = getMaxrows();
-        time = System.currentTimeMillis() - time;
+        time = System.nanoTime() - time;
         StringBuilder buff = new StringBuilder();
         if (edit) {
             buff.append("<form id=\"editing\" name=\"editing\" method=\"post\" " +
@@ -1661,8 +1665,8 @@ public class WebApp {
             buff.append('(').append(rows).append(" ${text.result.rows}");
         }
         buff.append(", ");
-        time = System.currentTimeMillis() - time;
-        buff.append(time).append(" ms)");
+        time = System.nanoTime() - time;
+        buff.append(time).append(" nano)");
         if (!edit && isUpdatable && allowEdit) {
             buff.append("<br /><br />" +
                     "<form name=\"editResult\" method=\"post\" " +

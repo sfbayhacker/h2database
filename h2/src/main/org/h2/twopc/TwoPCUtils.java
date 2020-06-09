@@ -28,7 +28,7 @@ public class TwoPCUtils {
       is.close();
       return o;
     } catch(EOFException e) {
-      System.err.println("End deserialize!");
+      //System.err.println("End deserialize!");
       return o;
     } finally {
       is.close();

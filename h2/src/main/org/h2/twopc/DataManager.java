@@ -165,11 +165,15 @@ public class DataManager {
   
   public void commit(String remoteSid, Session localSession, HTimestamp ts, boolean grpc) {
     System.out.println(String.format("DataManager::commit(%s)", ts.toString()));
+   long start = System.currentTimeMillis();
+    System.out.println("*** DM commit 1 at:" + (System.currentTimeMillis() - start)); start = System.currentTimeMillis();
+
     List<Prewrite> txPrewrites = txMap.get(ts);
     if (txPrewrites == null || txPrewrites.size() == 0) {
       return;
     }
 
+    System.out.println("*** DM commit 2 at:" + (System.currentTimeMillis() - start)); start = System.currentTimeMillis();
     List<Prewrite> toRemove = new ArrayList<>();
 
     for(Prewrite pw: txPrewrites) {
@@ -177,23 +181,29 @@ public class DataManager {
       checkAndWrite(pw, minTS, toRemove, grpc);
     }
     
+    System.out.println("*** DM commit 3 at:" + (System.currentTimeMillis() - start)); start = System.currentTimeMillis();
     for(Prewrite pw: toRemove) {
       removeFromTxMap(pw);
       removeFromPwMap(pw);
     }
     
+    System.out.println("*** DM commit 4 at:" + (System.currentTimeMillis() - start)); start = System.currentTimeMillis();
     CommandProcessor.getInstance().commit(remoteSid, localSession);
+    System.out.println("*** DM commit 5 at:" + (System.currentTimeMillis() - start)); start = System.currentTimeMillis();
   }
   
   private void checkAndWrite(Prewrite pw, HTimestamp minTS, List<Prewrite> toRemove, boolean grpc) {
     System.out.println(String.format("DataManager::checkAndWrite(%s, %s, %s)", pw.toString(), String.valueOf(minTS), toRemove));
+    long start = System.currentTimeMillis();
     boolean result = write(pw, grpc);
+    System.out.println("*** checkAndWrite 1 at:" + (System.currentTimeMillis() - start)); start = System.currentTimeMillis(); 
     
     if (result) {
       if (wMap.get(pw.key) != null) {
         wMap.get(pw.key).remove(pw);
       }
       
+    System.out.println("*** checkAndWrite 2 at:" + (System.currentTimeMillis() - start)); start = System.currentTimeMillis(); 
       Prewrite minP = pwMap.get(pw.key).peek();
       if (minP != null) {
         HTimestamp newMinTS = minP.timestamp;
@@ -202,18 +212,24 @@ public class DataManager {
         }
       }
       
+    System.out.println("*** checkAndWrite 3 at:" + (System.currentTimeMillis() - start)); start = System.currentTimeMillis(); 
       //remove pw from txMap after
       toRemove.add(pw);
+    System.out.println("*** checkAndWrite 4 at:" + (System.currentTimeMillis() - start)); start = System.currentTimeMillis(); 
     } else {
       //buffer write
+    System.out.println("*** checkAndWrite 5 at:" + (System.currentTimeMillis() - start)); start = System.currentTimeMillis(); 
       wMap.computeIfAbsent(pw.key, k -> new PriorityQueue<>(new PrewriteComparator()));
       wMap.get(pw.key).removeIf(e -> e.equals(pw));
       wMap.get(pw.key).add(pw);
+    System.out.println("*** checkAndWrite 6 at:" + (System.currentTimeMillis() - start)); start = System.currentTimeMillis(); 
     }
   }
   
   private boolean write(Prewrite pw, boolean grpc) {
     System.out.println(String.format("DataManager::write(%s)", pw.toString()));
+    long start = System.currentTimeMillis();
+    System.out.println("*** write 1 at:" + (System.currentTimeMillis() - start)); start = System.currentTimeMillis(); 
 //    rMap.computeIfAbsent(pw.key, k -> new PriorityQueue<>());
 //    HTimestamp rMinTS = rMap.get(pw.key).peek();
 //    if (rMinTS == null || rMinTS.greaterThanOrEqualTo(pw.timestamp)) {
@@ -223,6 +239,7 @@ public class DataManager {
           pw.data.command, pw.data.remoteSid, pw.data.localSession);
       wtmMap.put(pw.key, pw.timestamp);
       writesCache.put(pw.key, newRow == null ? row : newRow);
+    System.out.println("*** write 2 at:" + (System.currentTimeMillis() - start)); start = System.currentTimeMillis(); 
       return true;
 //    }
     

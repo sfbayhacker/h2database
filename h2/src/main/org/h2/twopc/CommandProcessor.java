@@ -82,8 +82,11 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
       }
       case "commit": {
 //        commit(sid);
+       long start = System.currentTimeMillis();
+    System.out.println("*** DataManager.getInstance().commit 1 at:" + (System.currentTimeMillis() - start)); start = System.currentTimeMillis();
         DataManager.getInstance().commit(sid, null, new HTimestamp(hid, tid), true);
         response.setReply("OK");
+    System.out.println("*** DataManager.getInstance().commit 2 at:" + (System.currentTimeMillis() - start)); start = System.currentTimeMillis();
         break;
       }
       case "rollback": {
@@ -109,7 +112,8 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
   void rowOp(Row row, Row newRow, String t, String db, String op, String sid, Session localSession) {
     System.out.println(String.format("rowOp(%s, %s)", row.toString(), op));
     Session session = null;
-    
+    long start = System.currentTimeMillis();
+    System.out.println("*** rowOp 1 at:" + (System.currentTimeMillis() - start)); start = System.currentTimeMillis(); 
     if (localSession != null) {
       session = localSession;
     } else {
@@ -122,18 +126,21 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
       }      
     }
 
+    System.out.println("*** rowOp 2 at:" + (System.currentTimeMillis() - start)); start = System.currentTimeMillis(); 
     Database d = session.getDatabase();
     if (d == null) {
       System.err.println("Database " + db + " not found. Aborting " + op + " operation!");
       return;
     }
 
+    System.out.println("*** rowOp 3 at:" + (System.currentTimeMillis() - start)); start = System.currentTimeMillis(); 
     List<Table> tables = d.getTableOrViewByName("MAP");
     System.out.println("tables: " + tables);
     if (tables == null || tables.isEmpty()) {
       System.err.println("Table " + t + " not found. Aborting " + op + " operation!");
     }
 
+    System.out.println("*** rowOp 4 at:" + (System.currentTimeMillis() - start)); start = System.currentTimeMillis(); 
     if (op.equalsIgnoreCase("addRow")) {
         ((MVTable) tables.get(0)).addRow(session, row, true, false);
     } else if (op.equalsIgnoreCase("removeRow")) {
@@ -141,6 +148,7 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
     } else if (op.equalsIgnoreCase("updateRow")) {
         ((MVTable) tables.get(0)).updateRow(session, row, newRow, true, false);
     }
+    System.out.println("*** rowOp 5 at:" + (System.currentTimeMillis() - start)); start = System.currentTimeMillis(); 
 //    session.commit(false);
 //    session.close();
 //    sessionMap.remove(sid);
@@ -148,10 +156,13 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
 
   void commit(String sid, Session localSession) {
     Session session = null;
-    
+   long start = System.currentTimeMillis();
+    System.out.println("*** commit 1 at:" + (System.currentTimeMillis() - start)); start = System.currentTimeMillis();
+ 
     if (localSession != null) {
       session = localSession;
       session.commit(false, true);
+    System.out.println("*** commit 2 at:" + (System.currentTimeMillis() - start)); start = System.currentTimeMillis();
     } else {
       session = sessionMap.get(sid);
       if (session == null || session.isClosed()) {
@@ -159,15 +170,24 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
         System.out.println("Nothing to commit!");
         return;
       }
+    System.out.println("*** commit 3 at:" + (System.currentTimeMillis() - start)); start = System.currentTimeMillis();
       session.commit(false, true);
       //for sessions created by followers, clean up session objects
-      session.close();
-      sessionMap.remove(sid);
-    }
+    System.out.println("*** commit 5 at:" + (System.currentTimeMillis() - start)); start = System.currentTimeMillis();
+   /*   sessionMap.remove(sid);
+     final Session s = session;
+     new Thread( () -> {
+      s.close();
+	}).start(); */
+    System.out.println("*** commit 7 at:" + (System.currentTimeMillis() - start)); start = System.currentTimeMillis();
+    } 
   }
 
   void rollback(String sid, Session localSession) {
     Session session = null;
+    long start =  System.currentTimeMillis();
+  
+    System.out.println("*** rollback 1 at:" + (System.currentTimeMillis() - start)); start = System.currentTimeMillis();
      
     if (localSession != null) {
       session = localSession;
@@ -177,14 +197,16 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
       if (session == null || session.isClosed()) {
         // Nothing to rollback
         System.out.println("Nothing to rollback!");
+    System.out.println("*** rollback 2 at:" + (System.currentTimeMillis() - start)); start = System.currentTimeMillis();
         return;
       }
 
       session.rollback(true);
       //for sessions created by followers, clean up session objects
-      session.close();
-      sessionMap.remove(sid);      
+/*      session.close();
+      sessionMap.remove(sid);     */ 
     }
+    System.out.println("*** rollback 3 at:" + (System.currentTimeMillis() - start)); start = System.currentTimeMillis();
   }
 
   private Session createSession() {

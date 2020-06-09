@@ -5,6 +5,8 @@
  */
 package org.h2.tools;
 
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -53,6 +55,13 @@ public class Shell extends Tool implements Runnable {
     private boolean stopHide;
     private String serverPropertiesDir = Constants.SERVER_PROPERTIES_DIR;
 
+    /*static {
+      System.setOut(new PrintStream(new OutputStream() {
+      public void write(int b) {
+        // NO-OP
+      }
+    }));
+    }*/
     /**
      * Options are case sensitive. Supported options are:
      * <table>

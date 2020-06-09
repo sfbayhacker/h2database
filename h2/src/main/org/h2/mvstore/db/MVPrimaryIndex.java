@@ -451,8 +451,8 @@ public class MVPrimaryIndex extends BaseIndex implements MVIndex<Long,SearchRow>
         
         @Override
         public Row get() {
-          System.out.println("MVStoreCursor::get()");
-          System.out.println("get row - " + row);
+          //System.out.println("MVStoreCursor::get()");
+          //System.out.println("get row - " + row);
           
             if (row == null) {
                 if (current != null) {
@@ -464,12 +464,12 @@ public class MVPrimaryIndex extends BaseIndex implements MVIndex<Long,SearchRow>
                 }
             }
 
-            System.out.println("get row after - " + row);
+            //System.out.println("get row after - " + row);
             
             //Check data manager for any prewrites and read updated value
             if (TwoPCCoordinator.getInstance().isClustered() 
                 && session != null && "sa".equalsIgnoreCase(session.getUser().getName())) {
-              System.out.println("get row for key - " + row.getKey());
+              //System.out.println("get row for key - " + row.getKey());
               Row r = DataManager.getInstance().read(new RowOp(row), 
                   new HTimestamp(TwoPCCoordinator.getInstance().getHostId(), session.getTransaction().getGlobalId()));
               if (r != null) {

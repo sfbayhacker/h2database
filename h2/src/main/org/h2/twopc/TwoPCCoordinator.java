@@ -105,11 +105,18 @@ public class TwoPCCoordinator {
 
   public boolean commit(Session session) {
     boolean result = false;
+    long start = System.currentTimeMillis();
+    System.out.println("*** Start at:" + start); 
+
     try {
+      System.out.println("*** 1 at:" + (System.currentTimeMillis() - start)); start = System.currentTimeMillis();
       String dbName = session.getDatabase().getName();
+      System.out.println("*** 2 at:" + (System.currentTimeMillis() - start)); start = System.currentTimeMillis();
       String sid = String.valueOf(session.getId());
+      System.out.println("*** 2 at:" + (System.currentTimeMillis() - start)); start = System.currentTimeMillis();
       long tid = session.getTransaction() == null ? 0L : session.getTransaction().getGlobalId();
       DataManager.getInstance().commit(sid, session, new HTimestamp(getHostId(), tid), false);
+      System.out.println("*** 4 at:" + (System.currentTimeMillis() - start)); start = System.currentTimeMillis();
       
       if (dummy) {
         result = true;
@@ -118,6 +125,7 @@ public class TwoPCCoordinator {
         result = TwoPCCoordinator.getInstance()
             .sendMessage("commit", dbName, "", String.valueOf(session.getId()), tid, hostId, new byte[0]);
       }
+      System.out.println("*** 5 at:" + (System.currentTimeMillis() - start)); start = System.currentTimeMillis();
     } catch (InterruptedException | ExecutionException e) {
       // TODO Auto-generated catch block
       System.err.println("Failure sending log message: " + e.getMessage());
@@ -164,12 +172,14 @@ public class TwoPCCoordinator {
   public boolean sendMessage(final String command, final String db, final String table, final String sid, 
       final long tid, final int hid, final byte[] data)
       throws InterruptedException, ExecutionException {
+      long start = System.currentTimeMillis();
     System.out.println(String.format("sendMessage: {command=%s, db=%s, table=%s, sid=%s, tid=%d, hid=%d, data=%s}", command, db, table, sid, tid, hid, data));
     if (command == null || cohorts == null) {
       System.err.println(String.format("Unable to send message: {%s, %s}", command, data.toString()));
       return false;
     }
 
+      System.out.println("*** sendMessage at:" + (System.currentTimeMillis() - start)); start = System.currentTimeMillis();
     ExecutorService executors = Executors.newFixedThreadPool(cohorts.length);
     List<Future<String>> results = new ArrayList<>(cohorts.length);
     List<TwoPCClient> clients = new ArrayList<>(cohorts.length);
@@ -177,6 +187,7 @@ public class TwoPCCoordinator {
     try {
       // Access a service running on the local machine on port 50051
       for (String cohort : cohorts) {
+      System.out.println("*** sendMessage at:" + (System.currentTimeMillis() - start)); start = System.currentTimeMillis();
         System.out.println("cohort: " + cohort);
         TwoPCClient client = buildClient(cohort);
         clients.add(client);
@@ -184,9 +195,13 @@ public class TwoPCCoordinator {
         System.out.println("bytestring: " + b);
         Future<String> result = executors.submit(new CommandRunner(client, command, db, table, sid, tid, hid, b));
         results.add(result);
+      System.out.println("*** sendMessage at:" + (System.currentTimeMillis() - start)); start = System.currentTimeMillis();
       }
 
+      System.out.println("*** sendMessage executors.awaitTermination at:" + (System.currentTimeMillis() - start)); start = System.currentTimeMillis();
+      executors.shutdown();
       executors.awaitTermination(200, TimeUnit.MILLISECONDS);
+      System.out.println("*** sendMessage executors.awaitTermination at:" + (System.currentTimeMillis() - start)); start = System.currentTimeMillis();
 
       for (Future<String> result : results) {
         if (!result.isDone() || !"OK".equalsIgnoreCase(result.get())) {
