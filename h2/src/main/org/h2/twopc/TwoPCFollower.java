@@ -43,6 +43,7 @@ public class TwoPCFollower {
     if (prepared == null || prepared.isEmpty()) return;
     
     for(HTimestamp ts: prepared) {
+      outer:
       while (true) {
         System.out.println("Checking status of " + ts + " with coordinator.. ");
         Optional<String> txnStatus = checkTxnStatus(ts.timestamp);
@@ -56,6 +57,7 @@ public class TwoPCFollower {
               DataManager.getInstance().commit(pwList.get(0).data.remoteSid, null, ts, true);
             }
           }
+          break outer;
         } else {
           System.out.println("Txn status not available!!");
         }
