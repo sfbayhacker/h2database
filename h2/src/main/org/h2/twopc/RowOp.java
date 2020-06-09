@@ -1,17 +1,18 @@
 package org.h2.twopc;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
 
 import org.h2.engine.Session;
 import org.h2.result.Row;
 
-public class RowOp {
+public class RowOp implements Serializable {
   final List<Row> rows;
   final Row resultRow;
   final String command;
   final String remoteSid;
-  final Session localSession;
+  final transient Session localSession;
   
   final long rowKey;
   final String key;

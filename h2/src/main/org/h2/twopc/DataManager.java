@@ -1,5 +1,7 @@
 package org.h2.twopc;
 
+import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -12,7 +14,7 @@ import org.h2.engine.Session;
 import org.h2.message.DbException;
 import org.h2.result.Row;
 
-public class DataManager {
+public class DataManager implements Serializable {
   //largest timestamp of read operation on key
   Map<String, HTimestamp> rtmMap = new ConcurrentHashMap<>();
   //largest timestamp of write operation on key
@@ -285,7 +287,34 @@ public class DataManager {
     return writesCache.get(key);
   }
   
-  private class PrewriteComparator implements Comparator<Prewrite> {
+  /*private void flushWrites() {
+    try {
+      LogUtil.flush(wMap);
+    } catch (Exception e) {
+      throw DbException.get(99999, new RuntimeException("Log flush failed!"));
+    }
+  }*/
+  
+//  void flushState() {
+//    MapData data = new MapData(pwMap, wMap);
+//    try {
+//      LogUtil.flushDM();
+//    } catch (IOException e) {
+//      System.err.println("Error during flush: " + e.getMessage());
+//      e.printStackTrace();
+//    }
+//  }
+//  
+//  void restoreState() {
+//    try {
+//      LogUtil.restoreDM();
+//    } catch (IOException | ClassNotFoundException e) {
+//      System.err.println("Error during restore: " + e.getMessage());
+//      e.printStackTrace();
+//    }
+//  }
+  
+  private class PrewriteComparator implements Comparator<Prewrite>, Serializable {
     @Override
     public int compare(Prewrite o1, Prewrite o2) {
       int result = o1.timestamp.compareTo(o2.timestamp);
@@ -293,6 +322,16 @@ public class DataManager {
         result = o1.seq.compareTo(o2.seq);
       }
       return result;
+    }
+  }
+  
+  class MapData implements Serializable {
+    Map<String, PriorityQueue<Prewrite>> pwMap;
+    Map<String, PriorityQueue<Prewrite>> wMap;
+    
+    MapData(Map<String, PriorityQueue<Prewrite>> pwMap, Map<String, PriorityQueue<Prewrite>> wMap) {
+      this.pwMap = pwMap;
+      this.wMap = wMap;
     }
   }
 }

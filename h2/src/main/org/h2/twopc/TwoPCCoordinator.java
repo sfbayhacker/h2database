@@ -32,6 +32,7 @@ public class TwoPCCoordinator {
   private String grpcPort;
   private boolean clustered;
   private boolean dummy;
+  private boolean dieOnPrepare;
 
   private Map<String, ManagedChannel> channelMap = new HashMap<>();
   
@@ -53,6 +54,8 @@ public class TwoPCCoordinator {
           cohorts = peers.toString().split("\\|");
         }
       }
+      Object dop = props.get("dieOnPrepare");
+      dieOnPrepare = (dop != null && "y".equalsIgnoreCase(dop.toString()));
     } catch (Exception e) {
       System.err.println("Error loading properties!");
     }
@@ -298,6 +301,14 @@ public class TwoPCCoordinator {
 
   public boolean isClustered() {
     return clustered;
+  }
+  
+  public boolean dieOnPrepare() {
+    return dieOnPrepare;
+  }
+  
+  public void setDieOnPrepare(boolean flag) {
+    this.dieOnPrepare = flag;
   }
   
   private class CommandRunner implements Callable<String> {

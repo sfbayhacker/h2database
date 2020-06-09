@@ -1,6 +1,8 @@
 package org.h2.twopc;
 
-public class HTimestamp implements Comparable<HTimestamp> {
+import java.io.Serializable;
+
+public class HTimestamp implements Comparable<HTimestamp>, Serializable {
   int hid;
   long timestamp;
   

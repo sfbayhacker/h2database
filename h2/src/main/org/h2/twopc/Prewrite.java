@@ -1,6 +1,8 @@
 package org.h2.twopc;
 
-public class Prewrite {
+import java.io.Serializable;
+
+public class Prewrite implements Serializable {
   final String key;
   final RowOp data;
   final HTimestamp timestamp;

@@ -96,6 +96,41 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
         break;
       }
       case "prepare": {
+        boolean result = LogManager.getInstance().appendLogEntry(""+0+"#"+System.currentTimeMillis(), "prepare");
+        response.setReply(result ? "OK" : "ABORT");
+        break;
+      }
+      case "recover": {
+        try {
+          LogManager.getInstance().readLog();
+        } catch (IOException e) {
+          System.err.println("Error while recovering log: " + e.getMessage());
+          response.setReply("ABORT");
+          break;
+        }
+        System.out.println(LogManager.getInstance().getPreparedTransactions());
+        response.setReply("OK");
+        break;
+      }
+      case "flush-writes": {
+        try {
+          LogManager.getInstance().flushState();
+        } catch (IOException e) {
+          System.err.println("Error while flushing state: " + e.getMessage());
+          response.setReply("ABORT");
+          break;
+        }
+        response.setReply("OK");
+        break;
+      }
+      case "restore-writes": {
+        try {
+          LogManager.getInstance().restoreState();
+        } catch (ClassNotFoundException | IOException e) {
+          System.err.println("Error while restoring state: " + e.getMessage());
+          response.setReply("ABORT");
+          break;
+        }
         response.setReply("OK");
         break;
       }
@@ -208,7 +243,7 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
     }
     System.out.println("*** rollback 3 at:" + (System.currentTimeMillis() - start)); start = System.currentTimeMillis();
   }
-
+  
   private Session createSession() {
     // TODO: user to be part of message
     ConnectionInfo ci = new ConnectionInfo("~/test");

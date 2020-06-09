@@ -35,13 +35,14 @@ public class Server extends Tool implements Runnable, ShutdownHandler {
     private ShutdownHandler shutdownHandler;
     private boolean started;
 
-    static {
-      System.setOut(new PrintStream(new OutputStream() {
-      public void write(int b) {
-        // NO-OP
-      }
-    }));
-    }
+//    static {
+//      System.setOut(new PrintStream(new OutputStream() {
+//        public void write(int b) {
+//          // NO-OP
+//        }
+//      }));
+//    }
+    
     public Server() {
         // nothing to do
         this.service = null;
