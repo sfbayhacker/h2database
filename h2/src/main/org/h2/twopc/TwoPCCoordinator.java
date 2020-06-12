@@ -182,6 +182,7 @@ public class TwoPCCoordinator {
 
   public boolean sendMessage(final String command, final String db, final String table, final String sid,
       final long tid, final int hid, final byte[] data) throws InterruptedException, ExecutionException {
+    System.err.println("Sending " + command);
     long start = System.currentTimeMillis();
     String[] cohorts = ClusterInfo.getInstance().getCohorts();
     System.out.println(String.format("sendMessage: {command=%s, db=%s, table=%s, sid=%s, tid=%d, hid=%d, data=%s}",

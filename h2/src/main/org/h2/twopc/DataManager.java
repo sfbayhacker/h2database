@@ -46,7 +46,7 @@ public class DataManager implements Serializable {
         restoreFrom(restored);
       }
     } catch (ClassNotFoundException | IOException e) {
-      System.err.println("Error while restoring state: " + e.getMessage());
+      //System.err.println("Error while restoring state: " + e.getMessage());
     }
   }
   
@@ -139,7 +139,7 @@ public class DataManager implements Serializable {
           }
           
           try {
-            Thread.sleep(10);
+            Thread.sleep(2);
           } catch (InterruptedException e) {
             System.err.println(e.getMessage());
           }

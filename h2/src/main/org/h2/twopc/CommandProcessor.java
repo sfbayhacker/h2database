@@ -59,6 +59,7 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
     case "addrow":
     case "removerow":
     case "updaterow": {
+      System.err.println("Received " + command.toLowerCase());
       boolean hasError = false;
       boolean result = false;
       try {
@@ -83,6 +84,7 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
       break;
     }
     case "prepare": {
+      System.err.println("Received prepare");
     //    boolean result = LogManager.getInstance().appendLogEntry(""+0+"#"+System.currentTimeMillis(), "prepare");
       try {
         LogManager.getInstance().flushState();
@@ -96,6 +98,8 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
       break;
     }
     case "commit": {
+      if (ClusterInfo.getInstance().dieOnPrepare()) System.exit(1);
+      System.err.println("Received commit");
 //        commit(sid);
       boolean result = LogManager.getInstance().appendLogEntry("" + hid + "#" + tid, "commit");
       if (!result) {
@@ -112,12 +116,14 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
       break;
     }
     case "rollback": {
+      System.err.println("Received rollback");
 //        rollback(sid);
       DataManager.getInstance().rollback(sid, null, new HTimestamp(hid, tid));
       response.setReply("OK");
       break;
     }
     case "txnstatus": {
+      System.err.println("Received txnstatus request for " + tid);
       if (LogManager.getInstance().logEntries.isEmpty()) {
         response.setReply("ABORT");
         break;
@@ -129,6 +135,7 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
       break;
     }
     case "prepare2die": {
+      System.err.println("Setting flag to terminate-on-prepare");
       ClusterInfo.getInstance().setDieOnPrepare(true);
       response.setReply("OK");
       break;
@@ -175,9 +182,14 @@ public class CommandProcessor extends CommandProcessorGrpc.CommandProcessorImplB
 
     responseObserver.onNext(response.build());
     responseObserver.onCompleted();
-    
+   
     if ("prepare".equals(command.toLowerCase()) && "map".equals(t) && ClusterInfo.getInstance().dieOnPrepare()) {
-      System.exit(1);
+      System.out.println("In prepare 2 die..");
+      System.out.println("tid: " + tid);
+      List<Prewrite> prewrites = DataManager.getInstance().txMap.get(new HTimestamp(hid, tid));
+      if (prewrites != null && prewrites.size() > 0) {
+        System.exit(1);
+      }
     }
   }
 

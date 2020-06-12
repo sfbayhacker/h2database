@@ -38,26 +38,29 @@ public class TwoPCFollower {
   private void doInitChecks() throws InterruptedException, ExecutionException {
     System.out.println("Performing init checks..");
     List<HTimestamp> prepared = LogManager.getInstance().getPreparedTransactions();
-    System.out.println("prepared list: " + prepared);
-    if (true) return;
+    //if (true) return;
     if (prepared == null || prepared.isEmpty()) return;
-    
+    System.err.println("prepared txns: " + prepared);
+   
+    outer: 
     for(HTimestamp ts: prepared) {
-      outer:
+      inner:
       while (true) {
-        System.out.println("Checking status of " + ts + " with coordinator.. ");
+        System.err.println("Checking status of " + ts.timestamp + " with coordinator");
         Optional<String> txnStatus = checkTxnStatus(ts.timestamp);
         if (txnStatus.isPresent()) {
-          System.out.println("Txn status is " + txnStatus.get());
+          System.err.println("Txn status is " + txnStatus.get());
           if ("commit".equalsIgnoreCase(txnStatus.get())) {
             List<Prewrite> pwList = DataManager.getInstance().txMap.get(ts);
-            if (pwList == null || pwList.isEmpty()) {
-              continue;
-            } else {
+            if (pwList != null && !pwList.isEmpty()) {
+              System.err.println("Prewrites found. Commiting prewrites");
               DataManager.getInstance().commit(pwList.get(0).data.remoteSid, null, ts, true);
             }
+            System.err.println("Writing commit log record");
+            boolean result = LogManager.getInstance().appendLogEntry("" + ts.hid + "#" + ts.timestamp, "commit");
+	    if (!result) continue outer;
           }
-          break outer;
+          break inner;
         } else {
           System.out.println("Txn status not available!!");
         }

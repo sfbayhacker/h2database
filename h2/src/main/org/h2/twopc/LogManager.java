@@ -23,8 +23,8 @@ import org.h2.util.StringUtils;
 
 public class LogManager {
 //  final String PREWRITE_LOG_FILE_PATH = Constants.SERVER_PROPERTIES_DIR + "/pw_log.json";
-  final String WRITE_LOG_FILE_PATH = System.getProperty("user.home") + "/w_log.json";
-  final String TWOPC_LOG_FILE_PATH = System.getProperty("user.home") + "/2pc_log.txt";
+  final String WRITE_LOG_FILE_PATH = System.getProperty("user.home") + "/data.log";
+  final String TWOPC_LOG_FILE_PATH = System.getProperty("user.home") + "/2pc.log";
   
   final ArrayList<LogEntry> logEntries = new ArrayList<>();
   
@@ -43,7 +43,7 @@ public class LogManager {
     try {
       readLog();
     } catch (IOException e) {
-      System.err.println("Error while loading log file: " + e.getMessage());
+      //System.err.println("Error while loading log file: " + e.getMessage());
     }
   }
   

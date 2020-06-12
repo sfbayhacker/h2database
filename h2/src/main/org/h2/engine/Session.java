@@ -685,7 +685,7 @@ public class Session extends SessionWithState implements TransactionStore.Rollba
     }
 
     public void commit(boolean ddl, boolean grpc) {
-      System.out.println("Session::commit() - " + getId());
+      //System.out.println("Session::commit() - " + getId());
       
       if (!grpc && ClusterInfo.getInstance().isClustered() && "sa".equalsIgnoreCase(getUser().getName())) {
         boolean result = TwoPCCoordinator.getInstance().commit(this);
@@ -837,7 +837,7 @@ public class Session extends SessionWithState implements TransactionStore.Rollba
     }
 
     public void rollback(boolean grpc) {
-      System.out.println("Session::rollback()");
+      //System.out.println("Session::rollback()");
       
 //      Thread.dumpStack();
       

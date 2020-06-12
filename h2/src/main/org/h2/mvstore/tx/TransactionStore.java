@@ -418,7 +418,7 @@ public class TransactionStore {
         } while(!success);
 
         //CS244b TODO: to improve
-        long globalTxId = System.nanoTime();//*10 + Long.valueOf(TwoPCCoordinator.getInstance().getHostId());
+        long globalTxId = System.currentTimeMillis();//*10 + Long.valueOf(TwoPCCoordinator.getInstance().getHostId());
         Transaction transaction = new Transaction(this, transactionId, globalTxId, sequenceNo, status, name, logId,
                 timeoutMillis, ownerId, isolationLevel, listener);
 
